@@ -4,6 +4,10 @@ import csv
 NAF_classe_dict = {}
 NAF_sous_classe_dict = {}
 
+
+'''
+    Load dictionaries to match NAF codes and activity denomination
+'''
 reader = csv.reader(open('./assets/naf2008-liste-n4-classes.csv', 'r', encoding='UTF-8'))
 for row in reader:
    k, v = row
@@ -33,15 +37,16 @@ class LegalUnit:
             'siret_siege': data['etablissement_siege']['siret']
         }
 
-    def getFields() -> list[str]:
-        return LegalUnit.fields
+    @classmethod
+    def getFields(cls) -> list[str]:
+        return cls.fields
 
 def searchUnitesLegalesByDenomination(denomination: str) -> dict:
     '''
         Recherche les unités légales qui s'écrivent exactement avec cette dénomination (à la normalisation près)
         Retour sous la forme d'un dictionnaire avec une clé "error" ou "unites_legales" selon le succès de la requête
     '''
-    res = {}
+
     denomination = str(denomination).upper()
     
     params = { 
@@ -58,15 +63,28 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
     )
     if(response.status_code == 200):
         results = response.json()
-        res['unites_legales'] = [LegalUnit.extractFields(data) for data in results['unites_legales']]
-
+        if len(results) > 0:
+            status = 'info'
+            msg = 'Not enough informations'
+        else:
+            status = 'ok'
+            data = [LegalUnit.extractFields(data) for data in results['unites_legales']]
+            msg = ""
     elif(response.status_code == 404):
-        res['error'] = "Aucun établissement ne semble porter ce nom."
+        status = 'warning'
+        msg = "Aucun établissement ne semble porter ce nom."
     elif(response.status_code == 500):
-        res['error'] = "Le serveur est momentanément indisponible. Veuillez réessayer ultérieurement."
+        status = 'warning'
+        msg = "Le serveur est momentanément indisponible. Veuillez réessayer ultérieurement."
     elif(response.status_code == 429):
-        res['error'] = "La volumétrie d'appel a été dépassée (maximum 7 appels/seconde). Votre IP risque d'être blacklistée"
+        status = 'warning'
+        msg = "La volumétrie d'appel a été dépassée (maximum 7 appels/seconde). Votre IP risque d'être blacklistée"
     else:
-        res['error'] = "Une erreur non-traitée est survenue"
-    
-    return res
+        status = 'error'
+        msg = "An unexpected error occured"
+
+    return {
+        'status': status,
+        'msg': msg,
+        'data': data
+    }
