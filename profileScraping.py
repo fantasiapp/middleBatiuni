@@ -68,7 +68,7 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
     }
     
     try:
-        resList = executeRequest(f'SELECT siren, siret FROM etablissements WHERE denominationUsuelleEtablissement LIKE "{denomination_formatted}" LIMIT 10')
+        resList = executeRequest(f'SELECT siren, siret FROM etablissements WHERE denominationUsuelleEtablissement LIKE "{denomination_formatted}" LIMIT 10', dll=True)
         if len(resList) == 0:
             status = "info"
             msg = "Aucun établissement ne semble porter ce nom."
