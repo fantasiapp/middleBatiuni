@@ -68,16 +68,17 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
     }
     
     try:
-        resList = executeRequest(f'SELECT siren FROM unites_legales WHERE denominationUniteLegale LIKE "{denomination_formatted}" LIMIT 10')
+        resList = executeRequest(f'SELECT siren FROM unites_legales WHERE denominationUniteLegale LIKE "{denomination_formatted}" LIMIT 10', dml=True)
+        print(resList)
         if not resList:
             status = "info"
             msg = "Aucun établissement ne semble porter ce nom."
         elif len(resList) == 1:
             status="ok"
+            msg="Oll Korrekt"
             data = {
                     'denomination': denomination,
                     'siren': resList[0][0],
-                    'siret': resList[0][1]
                     }
             
         else:
