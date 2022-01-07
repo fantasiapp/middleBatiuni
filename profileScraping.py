@@ -57,7 +57,7 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
         Retour sous la forme d'un dictionnaire avec une clé "error" ou "unites_legales" selon le succès de la requête
     '''
     status, msg, data = "error", "An unexpected error occured", None
-    denomination = str(denomination).upper()
+    denomination_formatted = str(denomination).upper()
     
     params = { 
         'action': 'query', 
@@ -68,7 +68,7 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
     }
     
     try:
-        resList = executeRequest(f'SELECT siren, siret FROM etablissements WHERE denominationUsuelleEtablissement LIKE "%{denomination}%" LIMIT 10')
+        resList = executeRequest(f'SELECT siren, siret FROM etablissements WHERE denominationUsuelleEtablissement LIKE "{denomination_formatted}" LIMIT 10')
         if len(resList) == 0:
             status = "info"
             msg = "Aucun établissement ne semble porter ce nom."
@@ -78,7 +78,8 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
                     'denomination': denomination,
                     'siren': resList[0][0],
                     'siret': resList[0][1]
-                }
+                    }
+            
         else:
             status="info"
             msg="Pas assez d'informations."
@@ -113,6 +114,7 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
         status = 'error'
         msg = "An unexpected error occured"
     '''
+
 
     return {
         'status': status,
