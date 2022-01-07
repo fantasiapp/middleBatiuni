@@ -1,6 +1,6 @@
 import requests
 import csv
-from ../bdd import executeRequest
+from bdd import executeRequest
 
 NAF_classe_dict = {}
 NAF_sous_classe_dict = {}
