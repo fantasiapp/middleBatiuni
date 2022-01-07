@@ -123,7 +123,7 @@ def plot_with_matplotlib(x_vals, y_vals, labels, nbLabels: int = 25):
     selected_indices = random.sample(indices, nbLabels)
     for i in selected_indices:
         plt.annotate(labels[i], (x_vals[i], y_vals[i]))
-
+    plt.savefig('fig.png')
 
 filesDict = loadFiles(10)
 processer = Processer()
@@ -138,6 +138,7 @@ for key in keys:
 
 doc2vec = Model()
 doc2vec.trainModel([tokens for key in keys for tokens in filesDict[key]])
+doc2vec.save()
 
 for key in keys:
     filesDict[key] = doc2vec.buildEmbedding(filesDict[key])
@@ -145,7 +146,5 @@ for key in keys:
 vectors = [embedding for key in keys for embedding in filesDict[key]]
 labels =  [key for key in keys for i in range(len(filesDict[key]))]
 
-#for key in keys:
-#    print(filesDict[key])
 x_vals, y_vals, labels = reduce_dimensions(vectors, labels)
 plot_with_matplotlib(x_vals, y_vals, labels)
