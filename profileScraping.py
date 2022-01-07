@@ -73,7 +73,7 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
             status = "info"
             msg = "Aucun établissement ne semble porter ce nom."
         elif len(resList) == 1:
-            status="ok"
+            status="OK"
             msg="Oll Korrekt"
             data = {
                     'denomination': denomination,
