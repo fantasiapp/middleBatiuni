@@ -142,8 +142,10 @@ doc2vec.trainModel([tokens for key in keys for tokens in filesDict[key]])
 for key in keys:
     filesDict[key] = doc2vec.buildEmbedding(filesDict[key])
 
-vectors = [embedding for embeddings in filesDict for embedding in embeddings]
+vectors = [embedding for key in keys for embedding in filesDict[key]]
 labels =  [key for key in keys for i in range(len(filesDict[key]))]
 
+#for key in keys:
+#    print(filesDict[key])
 x_vals, y_vals, labels = reduce_dimensions(vectors, labels)
 plot_with_matplotlib(x_vals, y_vals, labels)
