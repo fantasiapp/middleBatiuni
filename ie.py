@@ -1,4 +1,3 @@
-from tkinter import Text
 from pdfExtraction import *
 
 
