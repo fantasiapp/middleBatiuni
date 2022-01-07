@@ -125,7 +125,7 @@ def plot_with_matplotlib(x_vals, y_vals, labels, nbLabels: int = 25):
         plt.annotate(labels[i], (x_vals[i], y_vals[i]))
     plt.savefig('fig.png')
 
-filesDict = loadFiles(100)
+filesDict = loadFiles()
 processer = Processer()
 keys = filesDict.keys()
 
