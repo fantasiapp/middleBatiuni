@@ -1,5 +1,6 @@
 import requests
 import csv
+from ../bdd import executeRequest
 
 NAF_classe_dict = {}
 NAF_sous_classe_dict = {}
@@ -56,6 +57,8 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
         'prop': 'extracts', 
         'explaintext': True
     }
+
+    resList = executeRequest(f'SELECT siren, siret FROM etablissement WHERE denominationUsuelleEtablissement IS {denomination}')
 
     response = requests.get(
          'https://entreprise.data.gouv.fr/api/sirene/v3/unites_legales',
