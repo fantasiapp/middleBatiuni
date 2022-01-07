@@ -1,20 +1,27 @@
 import requests
 import csv
+import os
+import sys
+
 from bdd import executeRequest
 
 NAF_classe_dict = {}
 NAF_sous_classe_dict = {}
 
+package_directory = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(package_directory, '..'))
+
+import bdd
 
 '''
     Load dictionaries to match NAF codes and activity denomination
 '''
-reader = csv.reader(open('./assets/naf2008-liste-n4-classes.csv', 'r', encoding='UTF-8'))
+reader = csv.reader(open(os.path.join(package_directory, 'assets/naf2008-liste-n4-classes.csv'), 'r', encoding='UTF-8'))
 for row in reader:
    k, v = row
    NAF_classe_dict[k] = v
 
-reader = csv.reader(open('./assets/naf2008-liste-n5-sous-classes.csv', 'r', encoding='UTF-8'))
+reader = csv.reader(open(os.path.join(package_directory, 'assets/naf2008-liste-n5-sous-classes.csv'), 'r', encoding='UTF-8'))
 for row in reader:
    k, v = row
    NAF_sous_classe_dict[k] = v
