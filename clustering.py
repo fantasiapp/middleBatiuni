@@ -161,4 +161,4 @@ def extractData(nbFiles: int = 0):
     df.to_csv('./saves/dataframe.csv')
     
 
-extractData(5)
+extractData()
