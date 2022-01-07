@@ -9,5 +9,5 @@ Dependencies:
     pip install --upgrade gensim
     pip install --upgrade sklearn
     pip install --upgrade matplotlib
-    pip install --upgrade tk
-    sudo apt-get install python3-tk
+    pip install --upgrade PyPDF2
+    pip install --upgrade pdfminer.six

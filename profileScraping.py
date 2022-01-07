@@ -5,15 +5,14 @@ from decorators import *
 import os
 import sys
 
-from bdd import executeRequest
 
 NAF_classe_dict = {}
 NAF_sous_classe_dict = {}
 
 package_directory = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(package_directory, '..'))
+sys.path.append('/var/fantasiapp/batiUni/middle/')
 
-import bdd
+from bdd import executeRequest
 
 '''
     Load dictionaries to match NAF codes and activity denomination

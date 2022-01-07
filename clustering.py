@@ -8,6 +8,7 @@ import numpy as np
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import random
+import pandas as pd
 
 from ie import *
 from decorators import timer
@@ -51,7 +52,7 @@ class Model:
     '''
 
     def __init__(self):
-        self.save_path = './gensim.model'
+        self.save_path = './saves/gensim.model'
         self.min_count=3
         self.vector_size=50
         self.sg=1
@@ -107,7 +108,7 @@ def reduce_dimensions(vectors, labels, num_dimensions: int = 2, output_dimension
     y_vals = [v[output_dimensions[1]] for v in vectors]
     return x_vals, y_vals, labels
 
-def plot_with_matplotlib(x_vals, y_vals, labels, nbLabels: int = 25):
+def plot_with_matplotlib(x_vals: list[float], y_vals: list[float], labels, nbLabels: int = 25):
 
     nbLabels = min(nbLabels, len(labels))
 
@@ -123,28 +124,41 @@ def plot_with_matplotlib(x_vals, y_vals, labels, nbLabels: int = 25):
     selected_indices = random.sample(indices, nbLabels)
     for i in selected_indices:
         plt.annotate(labels[i], (x_vals[i], y_vals[i]))
-    plt.savefig('fig.png')
+    plt.savefig('./saves/fig.png')
 
-filesDict = loadFiles()
-processer = Processer()
-keys = filesDict.keys()
 
-for key in keys:
-    print(f'Extracting texts from file {key}')
-    filesDict[key] = buildCorpus(filesDict[key])
-    print(f'Tokenizing texts from corpus {key}')
-    for text in filesDict[key]:
-        filesDict[key] = processer.tokenize(text)
+def extractData(nbFiles: int = 0):
+    filesDict = loadFiles(nbFiles)
+    processer = Processer()
+    keys = filesDict.keys()
+    
+    df = pd.DataFrame()
+    df['path'] = [path for key in keys for path in filesDict[key]]
 
-doc2vec = Model()
-doc2vec.trainModel([tokens for key in keys for tokens in filesDict[key]])
-doc2vec.save()
+    for key in keys:
+        print(f'Extracting texts from file {key}')
+        filesDict[key] = buildCorpus(filesDict[key])
+        print(f'Tokenizing texts from corpus {key}')
+        filesDict[key] = [processer.tokenize(text) for text in filesDict[key]]
 
-for key in keys:
-    filesDict[key] = doc2vec.buildEmbedding(filesDict[key])
+    # df['tokens'] = [tokens for key in keys for tokens in filesDict[key]]
 
-vectors = [embedding for key in keys for embedding in filesDict[key]]
-labels =  [key for key in keys for i in range(len(filesDict[key]))]
+    doc2vec = Model()
+    doc2vec.trainModel([tokens for key in keys for tokens in filesDict[key]])
+    doc2vec.save()
 
-x_vals, y_vals, labels = reduce_dimensions(vectors, labels)
-plot_with_matplotlib(x_vals, y_vals, labels)
+    for key in keys:
+        filesDict[key] = doc2vec.buildEmbedding(filesDict[key])
+
+    vectors = [embedding for key in keys for embedding in filesDict[key]]
+    labels =  [key for key in keys for i in range(len(filesDict[key]))]
+
+    df['embedding'] = vectors
+
+    x_vals, y_vals, labels = reduce_dimensions(vectors, labels)
+    plot_with_matplotlib(x_vals, y_vals, labels)
+    df['label'] = labels
+    df.to_csv('./saves/dataframe.csv')
+    
+
+extractData(5)
