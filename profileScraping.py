@@ -1,5 +1,7 @@
 import requests
 import csv
+
+from decorators import *
 import os
 import sys
 
@@ -48,13 +50,13 @@ class LegalUnit:
     @classmethod
     def getFields(cls) -> list[str]:
         return cls.fields
-
+@timer
 def searchUnitesLegalesByDenomination(denomination: str) -> dict:
     '''
         Recherche les unités légales qui s'écrivent exactement avec cette dénomination (à la normalisation près)
         Retour sous la forme d'un dictionnaire avec une clé "error" ou "unites_legales" selon le succès de la requête
     '''
-
+    status, msg, data = "error", "An unexpected error occured", None
     denomination = str(denomination).upper()
     
     params = { 
@@ -64,9 +66,27 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
         'prop': 'extracts', 
         'explaintext': True
     }
+    
+    try:
+        resList = executeRequest(f'SELECT siren, siret FROM etablissements WHERE denominationUsuelleEtablissement LIKE "%{denomination}%" LIMIT 10')
+        if len(resList) == 0:
+            status = "info"
+            msg = "Aucun établissement ne semble porter ce nom."
+        elif len(resList) == 1:
+            status="ok"
+            data = {
+                    'denomination': denomination,
+                    'siren': resList[0][0],
+                    'siret': resList[0][1]
+                }
+        else:
+            status="info"
+            msg="Pas assez d'informations."
 
-    resList = executeRequest(f'SELECT siren, siret FROM etablissement WHERE denominationUsuelleEtablissement IS {denomination}')
-
+    except:
+        print("Something wrong happened ...")
+                
+    '''
     response = requests.get(
          'https://entreprise.data.gouv.fr/api/sirene/v3/unites_legales',
          params= params
@@ -92,6 +112,7 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
     else:
         status = 'error'
         msg = "An unexpected error occured"
+    '''
 
     return {
         'status': status,
