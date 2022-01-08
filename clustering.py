@@ -160,5 +160,9 @@ def extractData(nbFiles: int = 0):
     df['label'] = labels
     df.to_csv('./saves/dataframe.csv')
     
+'''
+    CAREFUL BEFORE UNCOMMENT
+    # extractData()
+'''
 
-extractData()
+# Next to do : compute better img, with correct colors and labelling
