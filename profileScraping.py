@@ -67,11 +67,12 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
         elif len(resList) == 1:
             status="OK"
             msg="Oll Korrekt"
+            siren=resList[0][0]
             nic_siege = resList[0][2]
-            siege = executeRequest(f'SELECT numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement FROM etablissements WHERE siren LIKE "{denomination_formatted} AND nic LIKE {nic_siege}" LIMIT 10', dml=True)
+            siege = executeRequest(f'SELECT numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement FROM etablissements WHERE siren LIKE "{siren}" AND nic LIKE "{nic_siege}" LIMIT 10', dml=True)
             data = {
                     'denomination': denomination,
-                    'siren': resList[0][0],
+                    'siren': siren,
                     'code_activite_principale' : resList[0][1],
                     'libelle_activite_principale': NAF_classe_dict[resList[0][1]] or NAF_sous_classe_dict[resList[0][1]] or "Activité inconnue",
                     'tva': f'FR{(12+3*(resList[0][0]%97))%97}{resList[0][0]}'
