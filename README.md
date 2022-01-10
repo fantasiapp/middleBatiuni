@@ -11,3 +11,4 @@ Dependencies:
     pip install --upgrade matplotlib
     pip install --upgrade PyPDF2
     pip install --upgrade pdfminer.six
+    pip install --upgrade pandas

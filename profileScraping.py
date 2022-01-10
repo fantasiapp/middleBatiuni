@@ -57,17 +57,9 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
     '''
     status, msg, data = "error", "An unexpected error occured", None
     denomination_formatted = str(denomination).upper()
-    
-    params = { 
-        'action': 'query', 
-        'format': 'json',
-        'denomination': denomination,
-        'prop': 'extracts', 
-        'explaintext': True
-    }
-    
+   
     try:
-        resList = executeRequest(f'SELECT siren FROM unites_legales WHERE denominationUniteLegale LIKE "{denomination_formatted}" LIMIT 10', dml=True)
+        resList = executeRequest(f'SELECT siren, activitePrincipaleUniteLegale, nicSiegeUniteLegale FROM unites_legales WHERE denominationUniteLegale LIKE "{denomination_formatted}" LIMIT 10', dml=True)
         print(resList)
         if not resList:
             status = "info"
@@ -75,46 +67,28 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
         elif len(resList) == 1:
             status="OK"
             msg="Oll Korrekt"
+            
+            siren=resList[0][0]
+            nic_siege = resList[0][2]
+            cle_tva = (12+(3*int(siren)%97))%97
+            siege = executeRequest(f'SELECT numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement FROM etablissements WHERE siren LIKE "{siren}" AND nic LIKE "{nic_siege}" LIMIT 10', dml=True)
             data = {
                     'denomination': denomination,
-                    'siren': resList[0][0],
+                    'siren': siren,
+                    'code_activite_principale' : resList[0][1],
+                    'libelle_activite_principale': getSousClasseByNAF(resList[0][1]) or getClasseByNAF(resList[0][1]) or "Activité inconnue",
+                    'tva': f'FR{cle_tva}{resList[0][0]}'
                     }
-            
+            if siege:
+                print(siege)
+                siege = siege[0]
+                data['adresse'] = f'{siege[0]} {siege[1]} {siege[2]}, {siege[3]} {siege[4]}'
         else:
             status="info"
             msg=f'Pas assez d\'informations. {len(resList)} matchs trouvés'
 
     except:
         print("Something wrong happened ...")
-                
-    '''
-    response = requests.get(
-         'https://entreprise.data.gouv.fr/api/sirene/v3/unites_legales',
-         params= params
-    )
-    if(response.status_code == 200):
-        results = response.json()
-        if len(results) > 0:
-            status = 'info'
-            msg = 'Not enough informations'
-        else:
-            status = 'ok'
-            data = [LegalUnit.extractFields(data) for data in results['unites_legales']]
-            msg = ""
-    elif(response.status_code == 404):
-        status = 'warning'
-        msg = "Aucun établissement ne semble porter ce nom."
-    elif(response.status_code == 500):
-        status = 'warning'
-        msg = "Le serveur est momentanément indisponible. Veuillez réessayer ultérieurement."
-    elif(response.status_code == 429):
-        status = 'warning'
-        msg = "La volumétrie d'appel a été dépassée (maximum 7 appels/seconde). Votre IP risque d'être blacklistée"
-    else:
-        status = 'error'
-        msg = "An unexpected error occured"
-    '''
-
 
     return {
         'status': status,
