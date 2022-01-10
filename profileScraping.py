@@ -57,7 +57,7 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
     '''
     status, msg, data = "error", "An unexpected error occured", None
     denomination_formatted = str(denomination).upper()
-    
+   
     try:
         resList = executeRequest(f'SELECT siren, activitePrincipaleUniteLegale, nicSiegeUniteLegale FROM unites_legales WHERE denominationUniteLegale LIKE "{denomination_formatted}" LIMIT 10', dml=True)
         print(resList)
@@ -67,17 +67,20 @@ def searchUnitesLegalesByDenomination(denomination: str) -> dict:
         elif len(resList) == 1:
             status="OK"
             msg="Oll Korrekt"
+            
             siren=resList[0][0]
             nic_siege = resList[0][2]
+            cle_tva = (12+(3*int(siren)%97))%97
             siege = executeRequest(f'SELECT numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement FROM etablissements WHERE siren LIKE "{siren}" AND nic LIKE "{nic_siege}" LIMIT 10', dml=True)
             data = {
                     'denomination': denomination,
                     'siren': siren,
                     'code_activite_principale' : resList[0][1],
-                    'libelle_activite_principale': NAF_classe_dict[resList[0][1]] or NAF_sous_classe_dict[resList[0][1]] or "Activité inconnue",
-                    'tva': f'FR{(12+3*(resList[0][0]%97))%97}{resList[0][0]}'
+                    'libelle_activite_principale': getSousClasseByNAF(resList[0][1]) or getClasseByNAF(resList[0][1]) or "Activité inconnue",
+                    'tva': f'FR{cle_tva}{resList[0][0]}'
                     }
             if siege:
+                print(siege)
                 siege = siege[0]
                 data['adresse'] = f'{siege[0]} {siege[1]} {siege[2]}, {siege[3]} {siege[4]}'
         else:
