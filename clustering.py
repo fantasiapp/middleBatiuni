@@ -10,29 +10,39 @@ import matplotlib.pyplot as plt
 import random
 import pandas as pd
 
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+import pickle
+
 from ie import *
 from decorators import timer
 
 mainDir = '../documents'
 
-@timer
 def loadFiles(nbFiles: int = 0) -> dict[str, list[str]]:
     return {dir: [join(mainDir, dir, file) for file in (listdir(join(mainDir, dir))[:nbFiles] if nbFiles else listdir(join(mainDir, dir))) if isfile(join(join(mainDir, dir), file)) and file.endswith('.pdf')] for dir in listdir(mainDir)}
 
 @timer
-def buildCorpus(files: list[str]) -> list[list[str]]:
+def buildCorpus(files: list[str]) -> list[str]:
     return [extractFullText(file) for file in files]
 
 class Processer:
-
+    '''
+        Used to tokenize the documents
+        As the initialisation is heavy, should be instantiated as little as possible
+    '''
     def __init__(self):
         self.stopwords = stopwords.words('english')
-        self.nlp = spacy.load("fr_core_news_md")
-        
+        self.nlp = spacy.load("fr_core_news_md")        
         print("Processer initialization complete")
 
     @timer
     def tokenize(self, text: str) -> str:
+        '''
+            Removes french and english stopwords, some punctuation, and lemmas shorter than 2
+        '''
         doc = self.nlp(text)
         tokens = [token.lemma_.lower() for token in doc
                      if token.lemma_ not in self.stopwords
@@ -40,8 +50,6 @@ class Processer:
                      and token.is_punct == False]
 
         return [token for token in tokens if len(token)>2]
-
-# processer = Processer()
 
 def buildTokensList(processer: Processer, corpus: list[list[str]]):
     return [processer.tokenize(text) for text in corpus]
@@ -51,8 +59,8 @@ class Model:
         Trains or load a Word2Vec model
     '''
 
-    def __init__(self):
-        self.save_path = './saves/gensim.model'
+    def __init__(self, save_path):
+        self.save_path = save_path
         self.min_count=3
         self.vector_size=50
         self.sg=1
@@ -117,9 +125,6 @@ def plot_with_matplotlib(x_vals: list[float], y_vals: list[float], labels, nbLab
     plt.figure(figsize=(12, 12))
     plt.scatter(x_vals, y_vals)
 
-    #
-    # Label randomly subsampled 25 data points
-    #
     indices = list(range(len(labels)))
     selected_indices = random.sample(indices, nbLabels)
     for i in selected_indices:
@@ -143,7 +148,7 @@ def extractData(nbFiles: int = 0):
 
     # df['tokens'] = [tokens for key in keys for tokens in filesDict[key]]
 
-    doc2vec = Model()
+    doc2vec = Model('./saves/gensim.model')
     doc2vec.trainModel([tokens for key in keys for tokens in filesDict[key]])
     doc2vec.save()
 
@@ -164,5 +169,24 @@ def extractData(nbFiles: int = 0):
     CAREFUL BEFORE UNCOMMENT
     # extractData()
 '''
-
 # Next to do : compute better img, with correct colors and labelling
+@timer
+def learnClf():
+    df = pd.read_csv('./saves/dataframe.csv')
+    labels = df['label'].unique()
+    data = {}
+    for label in labels:
+        data[label] = df[df['label']==label]['embedding']
+
+    vectors = [[float(v.strip('\n\r')) for v in vector.strip(' []').split(' ') if v!=''] for label in labels for vector in data[label]]
+    labels = [label for label in labels for i in range(len(data[label]))]
+
+    clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
+    X_train, X_test, y_train, y_test = train_test_split(vectors, labels, test_size=0.33, random_state=42)
+    clf.fit(X_train, y_train)
+    score = clf.score(X_test, y_test)
+    print(f'Test score : {score}')
+    with open('./saves/svm.pkl', 'wb') as f:
+        pickle.dump(clf, f)
+
+learnClf()
