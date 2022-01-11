@@ -1,5 +1,6 @@
 from os import listdir
 from os.path import isfile, join
+from pandas.core.frame import DataFrame
 
 import spacy
 from nltk.corpus import stopwords
@@ -47,7 +48,9 @@ class Processer:
         tokens = [token.lemma_.lower() for token in doc
                      if token.lemma_ not in self.stopwords
                      and token.is_stop == False
-                     and token.is_punct == False]
+                     and token.is_punct == False
+                     and token.lemma_.isalnum()
+                     and not token.lemma_.isdecimal()]
 
         return [token for token in tokens if len(token)>2]
 
@@ -99,14 +102,33 @@ class Model:
         
         return embedding
 
+class Data:
 
-def reduce_dimensions(vectors, labels, num_dimensions: int = 2, output_dimensions: tuple[int, int] = (0,1)):
+    def __init__(self, path):
+        self.path = path
+        self.df = pd.DataFrame()
+    
+    def load(self):
+        self.df = pd.read_csv(self.path)
+
+    def save(self):
+        self.df.to_csv(self.path)
+
+    def setPath(self, paths : list[str]):
+        self.df['path'] = paths
+
+    def setEmbedding(self, embeddings: list[list[float]]):
+        self.df['embedding'] = embeddings
+
+    def setLabel(self, labels : list[str]):
+        self.df['label'] = labels
+
+def reduce_dimensions(vectors, num_dimensions: int = 2, output_dimensions: tuple[int, int] = (0,1)):
     num_dimensions = num_dimensions  # final num dimensions (2D, 3D, etc)
     
 
     # extract the words & their vectors, as numpy arrays
     vectors = np.asarray(vectors)
-    labels = np.asarray(labels)  # fixed-width numpy strings
 
     # reduce using t-SNE
     tsne = TSNE(n_components=num_dimensions, random_state=0)
@@ -114,21 +136,22 @@ def reduce_dimensions(vectors, labels, num_dimensions: int = 2, output_dimension
 
     x_vals = [v[output_dimensions[0]] for v in vectors]
     y_vals = [v[output_dimensions[1]] for v in vectors]
-    return x_vals, y_vals, labels
+    return x_vals, y_vals
 
-def plot_with_matplotlib(x_vals: list[float], y_vals: list[float], labels, nbLabels: int = 25):
+def plot_with_matplotlib(x_vals: list[float], y_vals: list[float], data):
 
-    nbLabels = min(nbLabels, len(labels))
+    fig, ax = plt.subplots()
+    colors = {}
+    for label in data:
+        colors[label] = [np.random.random() for i in range(3)]
+    c = [colors[label] for label in data for i in range(len(data[label]))]
 
-    random.seed(0)
-
-    plt.figure(figsize=(12, 12))
-    plt.scatter(x_vals, y_vals)
-
-    indices = list(range(len(labels)))
-    selected_indices = random.sample(indices, nbLabels)
-    for i in selected_indices:
-        plt.annotate(labels[i], (x_vals[i], y_vals[i]))
+    ax.scatter(x_vals, y_vals, c=c)
+    offset = 0
+    fig.suptitle(f'Mapping of {len(x_vals)} documents')
+    for label in data:
+        ax.text(-85, 40+offset, label, fontsize=8,  color=colors[label])
+        offset+=10
     plt.savefig('./saves/fig.png')
 
 
@@ -137,8 +160,8 @@ def extractData(nbFiles: int = 0):
     processer = Processer()
     keys = filesDict.keys()
     
-    df = pd.DataFrame()
-    df['path'] = [path for key in keys for path in filesDict[key]]
+    dataStorage = Data('./saves/dataframe.csv')
+    dataStorage.setPath([path for key in keys for path in filesDict[key]])
 
     for key in keys:
         print(f'Extracting texts from file {key}')
@@ -158,18 +181,12 @@ def extractData(nbFiles: int = 0):
     vectors = [embedding for key in keys for embedding in filesDict[key]]
     labels =  [key for key in keys for i in range(len(filesDict[key]))]
 
-    df['embedding'] = vectors
+    dataStorage.setEmbedding(vectors)
+    dataStorage.setLabel(labels)
 
-    x_vals, y_vals, labels = reduce_dimensions(vectors, labels)
-    plot_with_matplotlib(x_vals, y_vals, labels)
-    df['label'] = labels
-    df.to_csv('./saves/dataframe.csv')
-    
-'''
-    CAREFUL BEFORE UNCOMMENT
-    # extractData()
-'''
-# Next to do : compute better img, with correct colors and labelling
+    dataStorage.save()
+
+
 @timer
 def learnClf():
     df = pd.read_csv('./saves/dataframe.csv')
@@ -189,4 +206,3 @@ def learnClf():
     with open('./saves/svm.pkl', 'wb') as f:
         pickle.dump(clf, f)
 
-learnClf()
