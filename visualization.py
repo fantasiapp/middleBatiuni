@@ -79,7 +79,13 @@ def visualizeSVM():
     plt.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
 
     # Plot also the training points
-    plt.scatter(X_test[:, 0], X_test[:, 1], cmap=plt.cm.coolwarm)
+    colors = {}
+    for label in uniques:
+        colors[label] = [np.random.random() for _ in range(3)]
+    
+    c = [colors[y] for y in y_test]
+
+    plt.scatter(X_test[:, 0], X_test[:, 1], c=c, marker=(5,0), cmap=plt.cm.coolwarm)
     plt.xlabel('Dimension 1')
     plt.ylabel('Dimension 2')
     plt.xlim(xx.min(), xx.max())
@@ -88,5 +94,3 @@ def visualizeSVM():
     plt.yticks(())
 
     plt.savefig('./saves/svm.png')
-
-visualizeSVM()
