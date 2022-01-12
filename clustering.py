@@ -36,7 +36,7 @@ class Processer:
     '''
     def __init__(self):
         self.stopwords = stopwords.words('english')
-        self.nlp = spacy.load("fr_core_news_md")        
+        self.nlp = spacy.load("fr_core_news_md")
         print("Processer initialization complete")
 
     @timer
@@ -206,3 +206,22 @@ def learnClf():
     with open('./saves/svm.pkl', 'wb') as f:
         pickle.dump(clf, f)
 
+@timer
+def predict(files: list[str]):
+    # print(f'Predicting {file}')
+    processer = Processer()
+    
+    doc2vec = Model('./saves/gensim.model')
+    doc2vec.load()
+    corpus = [extractFullText(file) for file in files]
+    tokensList = [processer.tokenize(text) for text in corpus]
+    embeddingList = doc2vec.buildEmbedding(tokensList)
+    
+    with open('./saves/svm.pkl', 'rb') as clfFile:
+        clf = pickle.load(clfFile)
+    predictions = clf.predict(embeddingList)
+    for file, prediction in zip(files, predictions):
+        print(f'{file} has been found to be a {prediction}')
+
+files = [join('./assets', file) for file in listdir('./assets/') if isfile(join('./assets', file)) and file.endswith('.pdf')]
+predict(files)
