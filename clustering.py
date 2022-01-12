@@ -188,14 +188,14 @@ def extractData(nbFiles: int = 0):
 
 
 @timer
-def learnClf():
-    df = pd.read_csv('./saves/dataframe.csv')
+def learnClf(df: dict, outputPath):
     labels = df['label'].unique()
     data = {}
     for label in labels:
         data[label] = df[df['label']==label]['embedding']
 
-    vectors = [[float(v.strip('\n\r')) for v in vector.strip(' []').split(' ') if v!=''] for label in labels for vector in data[label]]
+    # vectors = [[float(v.strip('\n\r')) for v in vector.strip(' []').split(' ') if v!=''] for label in labels for vector in data[label]]
+    vectors = [vector for label in labels for vector in data[label]]
     labels = [label for label in labels for i in range(len(data[label]))]
 
     clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
@@ -203,11 +203,12 @@ def learnClf():
     clf.fit(X_train, y_train)
     score = clf.score(X_test, y_test)
     print(f'Test score : {score}')
-    with open('./saves/svm.pkl', 'wb') as f:
+    with open(outputPath, 'wb') as f:
         pickle.dump(clf, f)
+    return clf
 
 @timer
-def predict(files: list[str]):
+def predict(files: list[str], inputPath):
     # print(f'Predicting {file}')
     processer = Processer()
     
@@ -217,11 +218,11 @@ def predict(files: list[str]):
     tokensList = [processer.tokenize(text) for text in corpus]
     embeddingList = doc2vec.buildEmbedding(tokensList)
     
-    with open('./saves/svm.pkl', 'rb') as clfFile:
+    with open(inputPath, 'rb') as clfFile:
         clf = pickle.load(clfFile)
     predictions = clf.predict(embeddingList)
     for file, prediction in zip(files, predictions):
         print(f'{file} has been found to be a {prediction}')
 
-files = [join('./assets', file) for file in listdir('./assets/') if isfile(join('./assets', file)) and file.endswith('.pdf')]
-predict(files)
+# files = [join('./assets', file) for file in listdir('./assets/') if isfile(join('./assets', file)) and file.endswith('.pdf')]
+# predict(files, './saves/svm.pkl')
