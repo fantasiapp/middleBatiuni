@@ -267,4 +267,4 @@ def recognize(files: list[str], inputPath: str, labels: list[str], retrain_clf: 
     if retrain_clf:
         learnClf(dataToStore, inputPath)
 
-recognize(files, './saves/svm.pkl', labels, True)
+recognize(files, './saves/svm.pkl', labels, True, True)
