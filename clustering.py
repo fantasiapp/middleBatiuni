@@ -1,4 +1,4 @@
-from os import listdir
+from os import listdir, replace
 from os.path import isfile, join
 
 import spacy
@@ -213,7 +213,6 @@ def learnClf(df: dict, outputPath):
 
 @timer
 def predict(files: list[str], inputPath):
-    # print(f'Predicting {file}')
     processer = Processer()
     
     doc2vec = Model('./saves/gensim.model')
@@ -225,13 +224,43 @@ def predict(files: list[str], inputPath):
     with open(inputPath, 'rb') as clfFile:
         clf = pickle.load(clfFile)
     predictions = clf.predict(embeddingList)
+    
     for file, prediction in zip(files, predictions):
         print(f'{file} has been found to be a {prediction}')
+    
+    return predictions
 
-# files = [join('./assets', file) for file in listdir('./assets/') if isfile(join('./assets', file)) and file.endswith('.pdf')]
-# predict(files, './saves/svm.pkl')
+files = [join('./assets', dir, file) for dir in listdir('./assets') if not isfile(join('./assets/', dir)) for file in listdir(join('./assets/', dir)) if isfile(join('./assets/', dir, file)) and file.endswith('.pdf')]
+labels = [dir for dir in listdir('./assets') if not isfile(join('./assets/', dir)) for file in listdir(join('./assets/', dir)) if isfile(join('./assets/', dir, file)) and file.endswith('.pdf')]
+# print(predict(files, './saves/svm.pkl'))
 
-dataStorage = Data('./saves/dataframe.csv')
-dataStorage.load()
-dataStorage.setHash([hashlib.sha224(extractFullText(path).encode('utf-8')).digest() for path in dataStorage.df['path']])
-dataStorage.save()
+
+@timer
+def recognize(files: list[str], inputPath: str, labels: list[str]):
+    processer = Processer()
+    
+    doc2vec = Model('./saves/gensim.model')
+    doc2vec.load()
+    corpus = [extractFullText(file) for file in files]
+    tokensList = [processer.tokenize(text) for text in corpus]
+    embeddingList = doc2vec.buildEmbedding(tokensList)
+    
+    dataStorage = Data('./saves/dataframe.csv')
+    dataStorage.load()
+
+    with open(inputPath, 'rb') as clfFile:
+        clf = pickle.load(clfFile)
+    predictions = clf.predict(embeddingList)
+
+    for i in range(len(files)):
+        if labels[i]==predictions[i]:
+            print(f'Correct prediction {predictions[i]} for file {files[i]}')
+            replace(files[i], join(f'../documents/{predictions[i]}', files.split('\\')[-1]))
+        else:
+            print(f'File {files[i]} was labelled as {labels[i]}, but has been found to be a {predictions[i]}')
+
+    dataStorage.setPath(dataStorage.df['path'].to_list() + [files[i] for i in range(len(files)) if labels[i]==predictions[i]])
+    dataStorage.setLabel(dataStorage.df['label'].to_list() + [labels[i] for i in range(len(files)) if labels[i]==predictions[i]])
+    dataStorage.setEmbedding(dataStorage.df['embedding'].to_list() + [embeddingList[i] for i in range(len(files))])
+    dataStorage.setHash(dataStorage.df['path'].to_list() + [hashlib.sha224(corpus[i].encode('utf-8')).digest() for i in range(len(files)) if labels[i]==predictions[i]])
+    dataStorage.save()
