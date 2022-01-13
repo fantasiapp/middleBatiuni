@@ -1,6 +1,5 @@
 from os import listdir
 from os.path import isfile, join
-from pandas.core.frame import DataFrame
 
 import spacy
 from nltk.corpus import stopwords
@@ -8,8 +7,8 @@ from gensim.models import Word2Vec
 import numpy as np
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
-import random
 import pandas as pd
+import hashlib
 
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -122,6 +121,9 @@ class Data:
 
     def setLabel(self, labels : list[str]):
         self.df['label'] = labels
+    
+    def setHash(self, hashes: list[str]):
+        self.df['hash'] = hashes
 
 def reduce_dimensions(vectors, num_dimensions: int = 2, output_dimensions: tuple[int, int] = (0,1)):
     num_dimensions = num_dimensions  # final num dimensions (2D, 3D, etc)
@@ -226,3 +228,6 @@ def predict(files: list[str], inputPath):
 
 # files = [join('./assets', file) for file in listdir('./assets/') if isfile(join('./assets', file)) and file.endswith('.pdf')]
 # predict(files, './saves/svm.pkl')
+
+dataStorage = Data('./saves/dataframe.csv')
+dataStorage.setHashes([hashlib.sha225(extractFullText(path)) for path in dataStorage.df['path']])
