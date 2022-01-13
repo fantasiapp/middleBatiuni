@@ -157,9 +157,8 @@ def plot_with_matplotlib(x_vals: list[float], y_vals: list[float], data):
     plt.savefig('./saves/fig.png')
 
 
-def extractData(nbFiles: int = 0):
+def extractData(nbFiles: int = 0, processer: Processer = Processer()):
     filesDict = loadFiles(nbFiles)
-    processer = Processer()
     keys = filesDict.keys()
     
     dataStorage = Data('./saves/dataframe.csv')
@@ -172,8 +171,6 @@ def extractData(nbFiles: int = 0):
         hashesDict[key] = [hashlib.sha224(text.encode('utf-8')).digest() for text in filesDict[key]]
         print(f'Tokenizing texts from corpus {key}')
         filesDict[key] = [processer.tokenize(text) for text in filesDict[key]]
-
-    # df['tokens'] = [tokens for key in keys for tokens in filesDict[key]]
 
     doc2vec = Model('./saves/gensim.model')
     doc2vec.trainModel([tokens for key in keys for tokens in filesDict[key]])
@@ -190,9 +187,8 @@ def extractData(nbFiles: int = 0):
     dataStorage.setHash(hashes)
     dataStorage.save()
 
-
 @timer
-def learnClf(df: dict, outputPath):
+def learnClf(df: pd.DataFrame, outputPath):
     labels = df['label'].unique()
     data = {}
     for label in labels:
@@ -232,11 +228,9 @@ def predict(files: list[str], inputPath):
 
 files = [join('./assets', dir, file) for dir in listdir('./assets') if not isfile(join('./assets/', dir)) for file in listdir(join('./assets/', dir)) if isfile(join('./assets/', dir, file)) and file.endswith('.pdf')]
 labels = [dir for dir in listdir('./assets') if not isfile(join('./assets/', dir)) for file in listdir(join('./assets/', dir)) if isfile(join('./assets/', dir, file)) and file.endswith('.pdf')]
-# print(predict(files, './saves/svm.pkl'))
-
 
 @timer
-def recognize(files: list[str], inputPath: str, labels: list[str]):
+def recognize(files: list[str], inputPath: str, labels: list[str], retrain_clf: bool = False, retrain_model: bool = False):
     processer = Processer()
     
     doc2vec = Model('./saves/gensim.model')
@@ -245,8 +239,8 @@ def recognize(files: list[str], inputPath: str, labels: list[str]):
     tokensList = [processer.tokenize(text) for text in corpus]
     embeddingList = doc2vec.buildEmbedding(tokensList)
     
-    dataStorage = Data('./saves/dataframe.csv')
-    dataStorage.load()
+    dataStored = Data('./saves/dataframe.csv')
+    dataStored.load()
 
     with open(inputPath, 'rb') as clfFile:
         clf = pickle.load(clfFile)
@@ -255,12 +249,22 @@ def recognize(files: list[str], inputPath: str, labels: list[str]):
     for i in range(len(files)):
         if labels[i]==predictions[i]:
             print(f'Correct prediction {predictions[i]} for file {files[i]}')
-            replace(files[i], join(f'../documents/{predictions[i]}', files.split('\\')[-1]))
+            replace(files[i], join(f'../documents/{predictions[i]}', files[i].split('\\')[-1]))
         else:
             print(f'File {files[i]} was labelled as {labels[i]}, but has been found to be a {predictions[i]}')
+    
+    if retrain_model:
+        extractData(processer=processer)
+    else:
+        dataToStore = Data('./saves/dataframe.csv')
+        dataToStore.setPath(dataStored.df['path'].to_list() + [files[i] for i in range(len(files)) if labels[i]==predictions[i]])
+        dataToStore.setLabel(dataStored.df['label'].to_list() + [labels[i] for i in range(len(files)) if labels[i]==predictions[i]])
+        dataToStore.setEmbedding(dataStored.df['embedding'].to_list() + [embeddingList[i] for i in range(len(files)) if labels[i]==predictions[i]])
+        dataToStore.setHash(dataStored.df['hash'].to_list() + [hashlib.sha224(corpus[i].encode('utf-8')).digest() for i in range(len(files)) if labels[i]==predictions[i]])
+        dataToStore.save()
 
-    dataStorage.setPath(dataStorage.df['path'].to_list() + [files[i] for i in range(len(files)) if labels[i]==predictions[i]])
-    dataStorage.setLabel(dataStorage.df['label'].to_list() + [labels[i] for i in range(len(files)) if labels[i]==predictions[i]])
-    dataStorage.setEmbedding(dataStorage.df['embedding'].to_list() + [embeddingList[i] for i in range(len(files))])
-    dataStorage.setHash(dataStorage.df['path'].to_list() + [hashlib.sha224(corpus[i].encode('utf-8')).digest() for i in range(len(files)) if labels[i]==predictions[i]])
-    dataStorage.save()
+
+    if retrain_clf:
+        learnClf(dataToStore, inputPath)
+
+recognize(files, './saves/svm.pkl', labels, True)
