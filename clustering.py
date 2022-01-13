@@ -165,9 +165,11 @@ def extractData(nbFiles: int = 0):
     dataStorage = Data('./saves/dataframe.csv')
     dataStorage.setPath([path for key in keys for path in filesDict[key]])
 
+    hashesDict = {}
     for key in keys:
         print(f'Extracting texts from file {key}')
         filesDict[key] = buildCorpus(filesDict[key])
+        hashesDict[key] = [hashlib.sha224(text.encode('utf-8')).digest() for text in filesDict[key]]
         print(f'Tokenizing texts from corpus {key}')
         filesDict[key] = [processer.tokenize(text) for text in filesDict[key]]
 
@@ -182,10 +184,10 @@ def extractData(nbFiles: int = 0):
 
     vectors = [embedding for key in keys for embedding in filesDict[key]]
     labels =  [key for key in keys for i in range(len(filesDict[key]))]
-
+    hashes = [hash for key in filesDict for hash in hashesDict[key]]
     dataStorage.setEmbedding(vectors)
     dataStorage.setLabel(labels)
-
+    dataStorage.setHash(hashes)
     dataStorage.save()
 
 
@@ -231,5 +233,5 @@ def predict(files: list[str], inputPath):
 
 dataStorage = Data('./saves/dataframe.csv')
 dataStorage.load()
-dataStorage.setHash([hashlib.sha224(extractFullText(path).encode('utf-8')) for path in dataStorage.df['path']])
+dataStorage.setHash([hashlib.sha224(extractFullText(path).encode('utf-8')).digest() for path in dataStorage.df['path']])
 dataStorage.save()
