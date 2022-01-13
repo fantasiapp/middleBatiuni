@@ -230,4 +230,6 @@ def predict(files: list[str], inputPath):
 # predict(files, './saves/svm.pkl')
 
 dataStorage = Data('./saves/dataframe.csv')
-dataStorage.setHashes([hashlib.sha225(extractFullText(path)) for path in dataStorage.df['path']])
+dataStorage.load()
+dataStorage.setHash([hashlib.sha224(extractFullText(path).encode('utf-8')) for path in dataStorage.df['path']])
+dataStorage.save()
