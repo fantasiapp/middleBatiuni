@@ -1,9 +1,16 @@
 from PyPDF2.generic import ArrayObject, NumberObject
 
-from pdfminer.high_level import extract_pages, extract_text
-from pdfminer.layout import LTTextContainer, LTChar, LTPage, LTFigure, LTImage, LTAnno
+from pdfminer.high_level import extract_pages
+from pdfminer.converter import TextConverter
+from pdfminer.pdfpage import PDFPage
+from pdfminer.pdfinterp import PDFResourceManager
+from pdfminer.pdfinterp import PDFPageInterpreter
+from pdfminer.layout import LTTextContainer, LTChar, LTPage, LTFigure, LTImage, LTAnno, LAParams
 
 import random
+from io import StringIO
+import warnings
+warnings.filterwarnings("ignore", message="divide by zero encountered in divide")
 
 
 def randomColor():
@@ -97,16 +104,28 @@ def extractTextElts(file: str, sliceIt: bool = False) -> list:
     return textElts
 
 
-def extractFullText(file: str, sorted: bool = False) -> str:
+def extractFullText(path: str) -> str:
     '''
         Returns the full text of a file
         Could Implemented the possibility to sort the words (for now vertically, then horizontally, which may be far from the layout)
     '''
-    print(f"Extract text from {file}")
+    print(f"Extract text from {path}")
     try:
-        return extract_text(file)
-    except:
-        print(f"Could not load the PDF ...")
+        with open(path, 'rb') as file:
+            output = StringIO()
+            manager = PDFResourceManager()
+            converter = TextConverter(manager, output, laparams=LAParams())
+            interpreter = PDFPageInterpreter(manager, converter)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore")
+                for page in PDFPage.get_pages(file, check_extractable=False):
+                    interpreter.process_page(page)
+        converter.close()
+        text = output.getvalue()
+        output.close()
+        return text
+    except Exception as e:
+        print(f"Could not load the PDF ...", e)
         return ""
         
 
