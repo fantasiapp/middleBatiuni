@@ -175,6 +175,9 @@ def plot_with_matplotlib(x_vals: list[float], y_vals: list[float], data):
         offset+=10
     plt.savefig('./saves/fig.png')
 
+def hashText(text: str):
+    return hashlib.sha224(text.encode('utf-8')).digest()
+
 
 def extractData(nbFiles: int = 0):
     '''
@@ -193,7 +196,7 @@ def extractData(nbFiles: int = 0):
     for key in keys:
         print(f'Extracting texts from file {key}')
         filesDict[key] = buildCorpus(filesDict[key])
-        hashesDict[key] = [hashlib.sha224(text.encode('utf-8')).digest() for text in filesDict[key]]
+        hashesDict[key] = [hashText(text) for text in filesDict[key]]
         print(f'Tokenizing texts from corpus {key}')
         filesDict[key] = [processer.tokenize(text) for text in filesDict[key]]
 
@@ -279,6 +282,9 @@ def recognize(files: list[str], inputPath: str, labels: list[str], retrain_clf: 
     
     dataStored = Data('./saves/dataframe.csv')
     dataStored.load()
+    hashes = [hashText(text) for text in corpus]
+    isNew = [True if hash not in dataStored.getHash() else False for hash in hashes]
+    print('isNew', isNew)
 
     with open(inputPath, 'rb') as clfFile:
         clf = pickle.load(clfFile)
@@ -295,11 +301,11 @@ def recognize(files: list[str], inputPath: str, labels: list[str], retrain_clf: 
         extractData(processer=processer)
     else:
         dataToStore = Data('./saves/dataframe.csv')
-        dataToStore.setPath(dataStored.df['path'].to_list() + [files[i] for i in range(len(files)) if labels[i]==predictions[i]])
-        dataToStore.setLabel(dataStored.df['label'].to_list() + [labels[i] for i in range(len(files)) if labels[i]==predictions[i]])
-        dataToStore.setEmbedding(dataStored.df['embedding'].to_list() + [embeddingList[i] for i in range(len(files)) if labels[i]==predictions[i]])
-        dataToStore.setTokens(dataStored.df['tokens'].to_list() + [tokensList[i] for i in range(len(files)) if labels[i]==predictions[i]])
-        dataToStore.setHash(dataStored.df['hash'].to_list() + [hashlib.sha224(corpus[i].encode('utf-8')).digest() for i in range(len(files)) if labels[i]==predictions[i]])
+        dataToStore.setPath(dataStored.df['path'].to_list() + [files[i] for i in range(len(files)) if labels[i]==predictions[i] and isNew])
+        dataToStore.setLabel(dataStored.df['label'].to_list() + [labels[i] for i in range(len(files)) if labels[i]==predictions[i] and isNew])
+        dataToStore.setEmbedding(dataStored.df['embedding'].to_list() + [embeddingList[i] for i in range(len(files)) if labels[i]==predictions[i] and isNew])
+        dataToStore.setTokens(dataStored.df['tokens'].to_list() + [tokensList[i] for i in range(len(files)) if labels[i]==predictions[i] and isNew])
+        dataToStore.setHash(dataStored.df['hash'].to_list() + [hashes[i] for i in range(len(files)) if labels[i]==predictions[i] and isNew])
         dataToStore.save()
 
 
