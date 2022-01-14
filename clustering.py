@@ -267,11 +267,8 @@ def predict(files: list[str], inputPath):
     
     return predictions
 
-files = [join('./assets', dir, file) for dir in listdir('./assets') if not isfile(join('./assets/', dir)) for file in listdir(join('./assets/', dir)) if isfile(join('./assets/', dir, file)) and file.endswith('.pdf')]
-labels = [dir for dir in listdir('./assets') if not isfile(join('./assets/', dir)) for file in listdir(join('./assets/', dir)) if isfile(join('./assets/', dir, file)) and file.endswith('.pdf')]
-
 @timer
-def recognize(files: list[str], inputPath: str, labels: list[str], retrain_clf: bool = False, retrain_model: bool = False):
+def recognize(files: list[str], inputPath: str, labels: list[str], commit: bool=False, retrain_clf: bool = False, retrain_model: bool = False):
     processer = Processer()
     
     doc2vec = Model('./saves/gensim.model')
@@ -283,8 +280,13 @@ def recognize(files: list[str], inputPath: str, labels: list[str], retrain_clf: 
     dataStored = Data('./saves/dataframe.csv')
     dataStored.load()
     hashes = [hashText(text) for text in corpus]
-    isNew = [True if hash not in dataStored.getHash() else False for hash in hashes]
-    print('isNew', isNew)
+    isNew = [True for _ in range(len(hashes))]
+    for i in range(len(hashes)):
+        for match in dataStored.getHash()==str(hashes[i]):
+            if match:
+                isNew[i]=False
+
+    print(files, 'isNew', isNew)
 
     with open(inputPath, 'rb') as clfFile:
         clf = pickle.load(clfFile)
@@ -293,14 +295,13 @@ def recognize(files: list[str], inputPath: str, labels: list[str], retrain_clf: 
     for i in range(len(files)):
         if labels[i]==predictions[i]:
             print(f'Correct prediction {predictions[i]} for file {files[i]}')
-            replace(files[i], join(f'../documents/{predictions[i]}', files[i].split('/')[-1]))
+            if commit:
+                replace(files[i], join(f'../documents/{predictions[i]}', files[i].split('/')[-1]))
         else:
             print(f'File {files[i]} was labelled as {labels[i]}, but has been found to be a {predictions[i]}')
     
-    if retrain_model:
-        extractData(processer=processer)
-    else:
-        dataToStore = Data('./saves/dataframe.csv')
+    dataToStore = Data('./saves/dataframe.csv')
+    if commit:
         dataToStore.setPath(dataStored.df['path'].to_list() + [files[i] for i in range(len(files)) if labels[i]==predictions[i] and isNew])
         dataToStore.setLabel(dataStored.df['label'].to_list() + [labels[i] for i in range(len(files)) if labels[i]==predictions[i] and isNew])
         dataToStore.setEmbedding(dataStored.df['embedding'].to_list() + [embeddingList[i] for i in range(len(files)) if labels[i]==predictions[i] and isNew])
@@ -308,10 +309,13 @@ def recognize(files: list[str], inputPath: str, labels: list[str], retrain_clf: 
         dataToStore.setHash(dataStored.df['hash'].to_list() + [hashes[i] for i in range(len(files)) if labels[i]==predictions[i] and isNew])
         dataToStore.save()
 
-
-    if retrain_clf:
+    if retrain_model and commit:
+        retrainModel()
+    if retrain_clf and commit:
         learnClf(dataToStore, inputPath)
 
 # extractData()
-#recognize(files, './saves/svm.pkl', labels, True, True)
+files = [join('./assets', dir, file) for dir in listdir('./assets') if not isfile(join('./assets/', dir)) for file in listdir(join('./assets/', dir)) if isfile(join('./assets/', dir, file)) and file.endswith('.pdf')]
+labels = [dir for dir in listdir('./assets') if not isfile(join('./assets/', dir)) for file in listdir(join('./assets/', dir)) if isfile(join('./assets/', dir, file)) and file.endswith('.pdf')]
+recognize(files, './saves/svm.pkl', labels)
 # retrainModel()
