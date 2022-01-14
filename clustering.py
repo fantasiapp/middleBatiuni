@@ -116,6 +116,9 @@ class Data:
     def setPath(self, paths : list[str]):
         self.df['path'] = paths
 
+    def setTokens(self, tokensList: list[list[str]]):
+        self.df['tokens'] = tokensList
+
     def setEmbedding(self, embeddings: list[list[float]]):
         self.df['embedding'] = embeddings
 
@@ -157,11 +160,17 @@ def plot_with_matplotlib(x_vals: list[float], y_vals: list[float], data):
     plt.savefig('./saves/fig.png')
 
 
-def extractData(nbFiles: int = 0, processer: Processer = Processer()):
+def extractData(nbFiles: int = 0):
+    '''
+        Used rebuild to full doc2vec model
+        As it is a long and painful process, chose your moment wisely
+    '''
+    processer = Processer()
     filesDict = loadFiles(nbFiles)
     keys = filesDict.keys()
     
     dataStorage = Data('./saves/dataframe.csv')
+    
     dataStorage.setPath([path for key in keys for path in filesDict[key]])
 
     hashesDict = {}
@@ -176,6 +185,8 @@ def extractData(nbFiles: int = 0, processer: Processer = Processer()):
     doc2vec.trainModel([tokens for key in keys for tokens in filesDict[key]])
     doc2vec.save()
 
+    dataStorage.setTokens([tokens for key in keys for tokens in filesDict[key]])
+
     for key in keys:
         filesDict[key] = doc2vec.buildEmbedding(filesDict[key])
 
@@ -186,6 +197,17 @@ def extractData(nbFiles: int = 0, processer: Processer = Processer()):
     dataStorage.setLabel(labels)
     dataStorage.setHash(hashes)
     dataStorage.save()
+
+
+def retrainModel():
+    dataStored = Data('./assets/dataframe.csv')
+    dataStored.load()
+    doc2vec = Model('./saves/gensim.model')
+    doc2vec.trainModel([tokens for tokens in dataStored.df['tokens']])
+    doc2vec.save()
+
+    dataStored.setEmbedding(doc2vec.buildEmbedding(dataStored.df['tokens']))
+    dataStored.save()
 
 @timer
 def learnClf(df: pd.DataFrame, outputPath):
@@ -249,7 +271,7 @@ def recognize(files: list[str], inputPath: str, labels: list[str], retrain_clf: 
     for i in range(len(files)):
         if labels[i]==predictions[i]:
             print(f'Correct prediction {predictions[i]} for file {files[i]}')
-            replace(files[i], join(f'../documents/{predictions[i]}', files[i].split('\\')[-1]))
+            replace(files[i], join(f'../documents/{predictions[i]}', files[i].split('/')[-1]))
         else:
             print(f'File {files[i]} was labelled as {labels[i]}, but has been found to be a {predictions[i]}')
     
@@ -260,6 +282,7 @@ def recognize(files: list[str], inputPath: str, labels: list[str], retrain_clf: 
         dataToStore.setPath(dataStored.df['path'].to_list() + [files[i] for i in range(len(files)) if labels[i]==predictions[i]])
         dataToStore.setLabel(dataStored.df['label'].to_list() + [labels[i] for i in range(len(files)) if labels[i]==predictions[i]])
         dataToStore.setEmbedding(dataStored.df['embedding'].to_list() + [embeddingList[i] for i in range(len(files)) if labels[i]==predictions[i]])
+        dataToStore.setTokens(dataStored.df['tokens'].to_list() + [tokensList[i] for i in range(len(files)) if labels[i]==predictions[i]])
         dataToStore.setHash(dataStored.df['hash'].to_list() + [hashlib.sha224(corpus[i].encode('utf-8')).digest() for i in range(len(files)) if labels[i]==predictions[i]])
         dataToStore.save()
 
@@ -267,4 +290,5 @@ def recognize(files: list[str], inputPath: str, labels: list[str], retrain_clf: 
     if retrain_clf:
         learnClf(dataToStore, inputPath)
 
-recognize(files, './saves/svm.pkl', labels, True, True)
+extractData()
+#recognize(files, './saves/svm.pkl', labels, True, True)
