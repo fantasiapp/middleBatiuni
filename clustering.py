@@ -128,6 +128,22 @@ class Data:
     def setHash(self, hashes: list[str]):
         self.df['hash'] = hashes
 
+
+    def getPath(self) -> list[str]:
+        return self.df['path']
+    
+    def getTokens(self) -> list[list[str]]:
+        return [[token.strip('\'') for token in tokens.strip('[]').split(', ')] for tokens in self.df['tokens']]
+
+    def getEmbedding(self) -> list[list[float]]:
+        return [[float(v.strip('\n\r')) for v in vector.strip(' []').split(' ') if v!=''] for vector in self.df['embedding']]
+
+    def getLabel(self) -> list[str]:
+        return self.df['label']
+
+    def getHash(self) -> list[str]:
+        return self.df['hash']
+
 def reduce_dimensions(vectors, num_dimensions: int = 2, output_dimensions: tuple[int, int] = (0,1)):
     num_dimensions = num_dimensions  # final num dimensions (2D, 3D, etc)
     
@@ -200,13 +216,13 @@ def extractData(nbFiles: int = 0):
 
 
 def retrainModel():
-    dataStored = Data('./assets/dataframe.csv')
+    dataStored = Data('./saves/dataframe.csv')
     dataStored.load()
     doc2vec = Model('./saves/gensim.model')
-    doc2vec.trainModel([tokens for tokens in dataStored.df['tokens']])
+    doc2vec.trainModel([token for tokens in dataStored.getTokens() for token in tokens])
     doc2vec.save()
 
-    dataStored.setEmbedding(doc2vec.buildEmbedding(dataStored.df['tokens']))
+    dataStored.setEmbedding(doc2vec.buildEmbedding(dataStored.getTokens()))
     dataStored.save()
 
 @timer
@@ -290,5 +306,6 @@ def recognize(files: list[str], inputPath: str, labels: list[str], retrain_clf: 
     if retrain_clf:
         learnClf(dataToStore, inputPath)
 
-extractData()
+# extractData()
 #recognize(files, './saves/svm.pkl', labels, True, True)
+# retrainModel()
