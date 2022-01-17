@@ -17,6 +17,7 @@ from sklearn.model_selection import train_test_split
 import pickle
 
 from ie import *
+from decorators import Counter
 
 """
     [ How it works ]
@@ -49,6 +50,7 @@ def loadFiles(nbFiles: int = 0) -> dict[str, list[str]]:
     mainDir = join(package_directory, '../documents')
     return {dir: [join(mainDir, dir, file) for file in (listdir(join(mainDir, dir))[:nbFiles] if nbFiles else listdir(join(mainDir, dir))) if isfile(join(join(mainDir, dir), file)) and file.endswith('.pdf')] for dir in listdir(mainDir)}
 
+@extractFullText.startCount
 def buildCorpus(files: list[str]) -> list[str]:
     return [extractFullText(file) for file in files]
 
@@ -104,10 +106,9 @@ class Processer:
 
         hashesDict = {}
         for key in keys:
-            print(f'Extracting texts from file {key}')
+            print(f'Extracting texts from directory {key}')
             filesDict[key] = buildCorpus(filesDict[key])
             hashesDict[key] = [Processer.hashText(text) for text in filesDict[key]]
-            print(f'Tokenizing texts from corpus {key}')
             filesDict[key] = [self.tokenize(text) for text in filesDict[key]]
 
         doc2vec = Model(self.modelFile)

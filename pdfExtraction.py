@@ -8,6 +8,7 @@ from pdfminer.pdfinterp import PDFPageInterpreter
 from pdfminer.layout import LTTextContainer, LTChar, LTPage, LTFigure, LTImage, LTAnno, LAParams
 
 import random
+from decorators import Counter
 from io import StringIO
 import warnings
 warnings.filterwarnings("ignore", message="divide by zero encountered in divide")
@@ -103,7 +104,7 @@ def extractTextElts(file: str, sliceIt: bool = False) -> list:
 
     return textElts
 
-
+@Counter
 def extractFullText(path: str) -> str:
     '''
         Returns the full text of a file
