@@ -17,7 +17,6 @@ from sklearn.model_selection import train_test_split
 import pickle
 
 from ie import *
-from decorators import Counter
 
 """
     [ How it works ]

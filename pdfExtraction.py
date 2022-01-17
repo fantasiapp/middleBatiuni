@@ -1,4 +1,10 @@
-from PyPDF2.generic import ArrayObject, NumberObject
+# Import libraries
+from PIL import Image
+import pytesseract
+import sys
+from pdf2image import convert_from_path
+import os
+
 
 from pdfminer.high_level import extract_pages
 from pdfminer.converter import TextConverter
@@ -11,6 +17,7 @@ import random
 from decorators import Counter
 from io import StringIO
 import warnings
+
 warnings.filterwarnings("ignore", message="divide by zero encountered in divide")
 
 
@@ -138,3 +145,26 @@ def extractImages(file: str) -> list[tuple[float, float, float, float]]:
             imagesBbox.append((element.x0, page_layout.height - element.y1, element.width, element.height))
 
     return imagesBbox
+
+def extractTextFromScan(path: str):
+    dir = '/'.join(path.split('/')[:-1])
+    print('dir : ', dir)
+    pages = convert_from_path(path, 500)
+    image_counter=1
+    for page in pages:
+        filename=os.path.join(dir, "page_"+str(image_counter)+".jpg")
+        filename = dir + "/page_"+str(image_counter)+".jpg"
+        page.save(filename, 'JPEG')
+        image_counter+=1
+    
+    output = StringIO()
+    for i in range(1, image_counter):
+        filename=os.path.join(dir, "page_"+str(i)+".jpg")
+        filename = dir + "/page_"+str(i)+".jpg"
+        text = str(((pytesseract.image_to_string(Image.open(filename)))))
+        output.write(text)
+        os.remove(filename)
+
+    fileText = output.getvalue()
+    output.close()
+    return fileText
