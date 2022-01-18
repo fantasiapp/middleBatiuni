@@ -53,10 +53,6 @@ def loadFiles(nbFiles: int = 0) -> dict[str, list[str]]:
 def buildCorpus(files: list[str]) -> list[str]:
     return [extractFullText(file) for file in files]
 
-@extractTextFromScan.startCount
-def buildCorpusOCR(files: list[str]) -> list[str]:
-    return [extractTextFromScan(file) for file in files]
-
 class Processer:
     '''
         Used to tokenize the documents
@@ -160,14 +156,11 @@ class Processer:
             pickle.dump(clf, f)
         return clf
 
-    def predict(self, files: list[str], ocr: bool=False):
+    def predict(self, files: list[str]):
         
         doc2vec = Model(self.modelFile)
         doc2vec.load()
-        if ocr:
-            corpus = buildCorpusOCR(files)
-        else:
-            corpus = buildCorpus(files)
+        corpus = buildCorpus(files)
         tokensList = [self.tokenize(text) for text in corpus]
         embeddingList = doc2vec.buildEmbedding(tokensList)
         

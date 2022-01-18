@@ -118,24 +118,31 @@ def extractFullText(path: str) -> str:
         Could Implemented the possibility to sort the words (for now vertically, then horizontally, which may be far from the layout)
     '''
     print(f"Extract text from {path}")
-    try:
-        with open(path, 'rb') as file:
-            output = StringIO()
-            manager = PDFResourceManager()
-            converter = TextConverter(manager, output, laparams=LAParams())
-            interpreter = PDFPageInterpreter(manager, converter)
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore")
-                for page in PDFPage.get_pages(file, check_extractable=False):
-                    interpreter.process_page(page)
-        converter.close()
-        text = output.getvalue()
-        output.close()
-        return text
-    except Exception as e:
-        print(f"Could not load the PDF ...", e)
-        return ""
-        
+
+    if path.endswith('.pdf'):
+        try:
+            with open(path, 'rb') as file:
+                output = StringIO()
+                manager = PDFResourceManager()
+                converter = TextConverter(manager, output, laparams=LAParams())
+                interpreter = PDFPageInterpreter(manager, converter)
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore")
+                    for page in PDFPage.get_pages(file, check_extractable=False):
+                        interpreter.process_page(page)
+            converter.close()
+            text = output.getvalue()
+            output.close()
+
+            if len(text)<200:
+                return extractFullTextWithOCR(path)
+            return text
+        except Exception as e:
+            print(f"Could not load the PDF ...", e)
+            return ""
+    else:
+        print("Could not load the file extension")
+
 
 def extractImages(file: str) -> list[tuple[float, float, float, float]]:
     imagesBbox = []
@@ -146,8 +153,7 @@ def extractImages(file: str) -> list[tuple[float, float, float, float]]:
 
     return imagesBbox
 
-@Counter
-def extractTextFromScan(path: str):
+def extractFullTextWithOCR(path: str):
     dir = '/'.join(path.split('/')[:-1])
     print('dir : ', dir)
     pages = convert_from_path(path, 500)
