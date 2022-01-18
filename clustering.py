@@ -53,13 +53,17 @@ def loadFiles(nbFiles: int = 0) -> dict[str, list[str]]:
 def buildCorpus(files: list[str]) -> list[str]:
     return [extractFullText(file) for file in files]
 
+@extractTextFromScan.startCount
+def buildCorpusOCR(files: list[str]) -> list[str]:
+    return [extractTextFromScan(file) for file in files]
+
 class Processer:
     '''
         Used to tokenize the documents
         As the initialisation is heavy, should be instantiated as little as possible
     '''
 
-    def __init__(self, modelFile = join(package_directory, 'saves/gensim.model'), dataFile = join(package_directory, 'saves/dataframe.csv'), clfFile = join(package_directory, 'saves/svm/pkl')):
+    def __init__(self, modelFile = join(package_directory, 'saves/gensim.model'), dataFile = join(package_directory, 'saves/dataframe.csv'), clfFile = join(package_directory, 'saves/svm.pkl')):
         self.stopwords = stopwords.words('english')
         self.nlp = spacy.load("fr_core_news_md")
         self.modelFile = modelFile
@@ -156,11 +160,14 @@ class Processer:
             pickle.dump(clf, f)
         return clf
 
-    def predict(self, files: list[str]):
+    def predict(self, files: list[str], ocr: bool=False):
         
         doc2vec = Model(self.modelFile)
         doc2vec.load()
-        corpus = [extractFullText(file) for file in files]
+        if ocr:
+            corpus = buildCorpusOCR(files)
+        else:
+            corpus = buildCorpus(files)
         tokensList = [self.tokenize(text) for text in corpus]
         embeddingList = doc2vec.buildEmbedding(tokensList)
         

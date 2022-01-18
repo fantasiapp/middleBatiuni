@@ -146,6 +146,7 @@ def extractImages(file: str) -> list[tuple[float, float, float, float]]:
 
     return imagesBbox
 
+@Counter
 def extractTextFromScan(path: str):
     dir = '/'.join(path.split('/')[:-1])
     print('dir : ', dir)
@@ -153,14 +154,14 @@ def extractTextFromScan(path: str):
     image_counter=1
     for page in pages:
         filename=os.path.join(dir, "page_"+str(image_counter)+".jpg")
-        filename = dir + "/page_"+str(image_counter)+".jpg"
+        #filename = dir + "/page_"+str(image_counter)+".jpg"
         page.save(filename, 'JPEG')
         image_counter+=1
     
     output = StringIO()
     for i in range(1, image_counter):
         filename=os.path.join(dir, "page_"+str(i)+".jpg")
-        filename = dir + "/page_"+str(i)+".jpg"
+        #filename = dir + "/page_"+str(i)+".jpg"
         text = str(((pytesseract.image_to_string(Image.open(filename)))))
         output.write(text)
         os.remove(filename)
