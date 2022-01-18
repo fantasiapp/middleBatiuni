@@ -139,7 +139,7 @@ class Processer:
     def learnClf(self):
         self.storedData.load()
 
-        labels = self.storedData.getLabel().unique()
+        labels = list(set(self.storedData.getLabel()))
         data = {}
         for label in labels:
             data[label] = [Data.unformatEmbedding(vector) for vector in self.storedData.df[self.storedData.df['label']==label]['embedding']]
