@@ -1,6 +1,8 @@
 from cProfile import label
 from os import listdir, replace
 from os.path import isfile, join, dirname, abspath
+import sys
+from requestBDD import *
 
 import spacy
 from nltk.corpus import stopwords
@@ -135,18 +137,9 @@ class Processer:
 
         self.storedData.setEmbedding(doc2vec.buildEmbedding(self.storedData.getTokens()))
         self.storedData.save()
-    
+
     def learnClf(self):
-        self.storedData.load()
-
-        labels = list(set(self.storedData.getLabel()))
-        data = {}
-        for label in labels:
-            data[label] = [Data.unformatEmbedding(vector) for vector in self.storedData.df[self.storedData.df['label']==label]['embedding']]
-
-        vectors = [vector for label in labels for vector in data[label]]
-        labels = [label for label in labels for _ in range(len(data[label]))]
-
+        labels, vectors = getEmbeddings()
         clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
         X_train, X_test, y_train, y_test = train_test_split(vectors, labels, test_size=0.33, random_state=42)
         clf.fit(X_train, y_train)
