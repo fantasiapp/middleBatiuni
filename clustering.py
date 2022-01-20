@@ -136,7 +136,7 @@ class Processer:
         self.storedData.setEmbedding(doc2vec.buildEmbedding(self.storedData.getTokens()))
         self.storedData.save()
     
-    def learnClf(self):
+    def learnClf(self, test_size: float = 0.25):
         self.storedData.load()
 
         labels = list(set(self.storedData.getLabel()))
@@ -148,10 +148,11 @@ class Processer:
         labels = [label for label in labels for _ in range(len(data[label]))]
 
         clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
-        X_train, X_test, y_train, y_test = train_test_split(vectors, labels, test_size=0.33, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(vectors, labels, test_size=test_size, random_state=42)
         clf.fit(X_train, y_train)
-        score = clf.score(X_test, y_test)
-        print(f'Test score : {score}')
+        if test_size:
+            score = clf.score(X_test, y_test)
+            print(f'Test score : {score}', f'Test proportion : {test_size}')
         with open(self.clfFile, 'wb') as f:
             pickle.dump(clf, f)
         return clf
@@ -239,6 +240,8 @@ class Model:
                 if token in self.model.wv.key_to_index:
                     sum += self.model.wv[token]
             embedding.append(sum)
+
+        print(f"Embedding : {embedding}")
         return embedding
 
 class Data:

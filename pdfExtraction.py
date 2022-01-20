@@ -155,7 +155,7 @@ def extractImages(file: str) -> list[tuple[float, float, float, float]]:
 
 def extractFullTextWithOCR(path: str):
     dir = '/'.join(path.split('/')[:-1])
-    print('\tOCRd needed')
+    print('\tOCR needed')
     with open('./logs.txt', 'a+') as logs:
         logs.write(path)
     pages = convert_from_path(path, 500)
