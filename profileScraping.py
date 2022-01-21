@@ -143,7 +143,7 @@ def searchUnitesLegalesByDenomination(denomination: str) -> list[dict]:
         'data': data
     }
 
-def searchEtablissementBySiren(siren: str) ->list[dict]:
+def searchEtablissementsBySiren(siren: str) ->list[dict]:
     status, msg, data = "error", "An unexpected error occured", None
 
     try:
