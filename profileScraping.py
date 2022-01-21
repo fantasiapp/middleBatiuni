@@ -108,10 +108,10 @@ def querySearchUnitesLegalesByDenomination(denomination: str):
 def handleSearchUnitesLegalesByDenomination(resList: list):
     pass
 
-def querySearchEtablissementsByDenomination(denomination: str):
+def querySearchEstablishmentsByDenomination(denomination: str):
     return f'SELECT denominationUniteLegale, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, activitePrincipaleEtablissement FROM etablissements JOIN unites_legales ON siren WHERE denominationUniteLegale LIKE "{denomination}" LIMIT 10'
 
-def handleSearchEtablissementsByDenomination(resList: list):
+def handleSearchEstablishmentsByDenomination(resList: list):
     for res in resList:
         res = [res[0], f'{res[1]} {res[2]} {res[3]}, {res[4]} {res[5]}', getSousClasseByNAF(res[3]) or getClasseByNAF(res[3]) or "Activité inconnue"]
     return {
@@ -123,11 +123,10 @@ def handleSearchEtablissementsByDenomination(resList: list):
 def getEnterpriseDataFrom(siren = "", siret="", denomination=""):
     
     if denomination:
-        query = querySearchEtablissementsByDenomination(str(denomination).upper())
-        handler = handleSearchEtablissementsByDenomination
+        query = querySearchEstablishmentsByDenomination(str(denomination).upper())
+        handler = handleSearchEstablishmentsByDenomination
     elif siren:
-        query = querySearchUnitesLegalesByDenomination(str(denomination).upper())
-        handler = handleSearchEtablissementsByDenomination
+        pass
     elif siret:
         pass
     
