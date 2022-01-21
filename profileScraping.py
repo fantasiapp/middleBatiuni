@@ -109,11 +109,12 @@ def handleSearchUnitesLegalesByDenomination(resList: list):
     pass
 
 def querySearchEstablishmentsByDenomination(denomination: str):
-    return f'SELECT denominationUniteLegale, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, activitePrincipaleEtablissement FROM etablissements JOIN unites_legales ON siren WHERE denominationUniteLegale LIKE "{denomination}" LIMIT 10'
+    return f'SELECT denominationUniteLegale, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, activitePrincipaleEtablissement FROM etablissements JOIN unites_legales ON etablissements.siren=unites_legales.siren WHERE denominationUniteLegale LIKE "{denomination}%" LIMIT 10'
 
 def handleSearchEstablishmentsByDenomination(resList: list):
-    for res in resList:
-        res = [res[0], f'{res[1]} {res[2]} {res[3]}, {res[4]} {res[5]}', getSousClasseByNAF(res[3]) or getClasseByNAF(res[3]) or "Activité inconnue"]
+    for i in range(len(resList)):
+        res = resList[i]
+        resList[i] = [res[0], f'{res[1]} {res[2]} {res[3]}, {res[4]} {res[5]}', getSousClasseByNAF(res[3]) or getClasseByNAF(res[3]) or "Activité inconnue"]
     return {
         'EstablishmentsFields': ['nom', 'adresse', 'activitePrincipale'],
         'EstablishmentsValues': {i: resList[i] for i in range(len(resList))
