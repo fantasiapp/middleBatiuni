@@ -120,10 +120,10 @@ def handleSearchEstablishmentsByDenomination(resList: list):
         }
     }
 
-def getEnterpriseDataFrom(siren = "", siret="", denomination=""):
+def getEnterpriseDataFrom(siren = None, siret=None, subName=None):
     
-    if denomination:
-        query = querySearchEstablishmentsByDenomination(str(denomination).upper())
+    if subName:
+        query = querySearchEstablishmentsByDenomination(str(subName).upper())
         handler = handleSearchEstablishmentsByDenomination
     elif siren:
         pass
