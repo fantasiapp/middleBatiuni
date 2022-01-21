@@ -96,74 +96,51 @@ class LegalUnit:
 #         'data': data
 #     }
 
-@timer
-def searchUnitesLegalesByDenomination(denomination: str) -> list[dict]:
-    '''
-        Recherche les unités légales qui s'écrivent exactement avec cette dénomination (à la normalisation près)
-        Retour sous la forme d'un dictionnaire avec une clé "error" ou "unites_legales" selon le succès de la requête
-    '''
-    status, msg, data = "error", "An unexpected error occured", None
-    denomination_formatted = str(denomination).upper()
-   
-    try:
-        resList = executeRequest(f'SELECT siren, activitePrincipaleUniteLegale, nicSiegeUniteLegale FROM unites_legales WHERE denominationUniteLegale LIKE "{denomination_formatted}" LIMIT 10', dml=True)
-        print(resList)
-        if not resList:
-            status = "info"
-            msg = "Aucune unité légale ne semble porter ce nom."
-        else:
-            status="OK"
-            msg="Oll Korrekt"
-            data = []
-            for res in resList:
-                siren=res[0]
-                nic_siege = res[2]
-                cle_tva = (12+(3*int(siren)%97))%97
-                siege = executeRequest(f'SELECT numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement FROM etablissements WHERE siren LIKE "{siren}" AND nic LIKE "{nic_siege}" LIMIT 1', dml=True)
-                nbEtablissements = executeRequest(f'SELECT COUNT(siret) FROM etablissements WHERE siren LIKE "{siren}"', dml=True)[0][0]
-                unite_legale = {
-                        'denomination': denomination,
-                        'siren': siren,
-                        'code_activite_principale' : res[1],
-                        'libelle_activite_principale': getSousClasseByNAF(res[1]) or getClasseByNAF(res[1]) or "Activité inconnue",
-                        'tva': f'FR{cle_tva}{res[0]}',
-                        'nbEtablissements': nbEtablissements
-                        }
-                if siege:
-                    siege = siege[0]
-                    unite_legale['adresse'] = f'{siege[0]} {siege[1]} {siege[2]}, {siege[3]} {siege[4]}'
+def querySearchEtablissemenstBySiren(siren: str):
+    return f'SELECT siret, nic, activitePrincipaleEtablissement, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement FROM etablissements WHERE siren LIKE "{siren}"'
 
-                data.append(unite_legale)
+def handleSearchEtablissementsBySiren(resList: list):
+    pass
 
-    except:
-        print("Something wrong happened ...")
+def querySearchUnitesLegalesByDenomination(denomination: str):
+    return f'SELECT siren, activitePrincipaleUniteLegale, nicSiegeUniteLegale FROM unites_legales,  WHERE denominationUniteLegale LIKE "{denomination}" LIMIT 10'
+
+def handleSearchUnitesLegalesByDenomination(resList: list):
+    pass
+
+def querySearchEtablissementsByDenomination(denomination: str):
+    return f'SELECT denominationUniteLegale, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, activitePrincipaleEtablissement FROM etablissements JOIN unites_legales ON siren WHERE denominationUniteLegale LIKE "{denomination}" LIMIT 10'
+
+def handleSearchEtablissementsByDenomination(resList: list):
+    for res in resList:
+        res = [res[0], f'{res[1]} {res[2]} {res[3]}, {res[4]} {res[5]}', getSousClasseByNAF(res[3]) or getClasseByNAF(res[3]) or "Activité inconnue"]
     return {
-        'status': status,
-        'msg': msg,
-        'data': data
+        'EstablishmentsFields': ['nom', 'adresse', 'activitePrincipale'],
+        'EstablishmentsValues': {i: resList[i] for i in range(len(resList))
+        }
     }
 
-def searchEtablissementsBySiren(siren: str) ->list[dict]:
+def getEnterpriseDataFrom(siren = "", siret="", denomination=""):
+    
+    if denomination:
+        query = querySearchEtablissementsByDenomination(str(denomination).upper())
+        handler = handleSearchEtablissementsByDenomination
+    elif siren:
+        query = querySearchUnitesLegalesByDenomination(str(denomination).upper())
+        handler = handleSearchEtablissementsByDenomination
+    elif siret:
+        pass
+    
     status, msg, data = "error", "An unexpected error occured", None
-
     try:
-        resList = executeRequest(f'SELECT siret, nic, activitePrincipaleEtablissement, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement FROM etablissements WHERE siren LIKE "{siren}"', dml=True)
-        data = []
+        resList = executeRequest(query, dml=True)
         if not resList:
             status = "info"
-            msg = "Aucun établissement ne semble porter ce nom."
+            msg = "Aucun résultat ne semble porter ce nom."
         else:
             status="OK"
             msg="Oll Korrekt"
-            for res in resList:
-                etablissement = {
-                    'siret': res[0],
-                    'nic': res[1],
-                    'code_activite_principale': res[2],
-                    'libelle_activite_principale': getSousClasseByNAF(res[2]) or getClasseByNAF(res[2]) or "Activité inconnue",
-                    'adresse': f'{res[3]} {res[4]} {res[5]}, {res[6]} {res[7]}'
-                }
-            data.append(etablissement)
+            data = handler(resList)
     except:
         print("Something wrong happened ...")
     return {
