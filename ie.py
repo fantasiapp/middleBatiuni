@@ -26,7 +26,7 @@ class Block:
 
 
 class Split:
-    def __init__(self, criteria: NumberObject, block1: list, block2: list, vertical: bool, line: tuple):
+    def __init__(self, criteria: float, block1: list, block2: list, vertical: bool, line: tuple):
         self.criteria, self.block1, self.block2, self.vertical, self.line = criteria, block1, block2, vertical, line 
 
     def __gt__(self, other):

@@ -12,3 +12,8 @@ Dependencies:
     pip install --upgrade PyPDF2
     pip install --upgrade pdfminer.six
     pip install --upgrade pandas
+
+    pip install pytesseract
+    pip install pdf2image
+    sudo apt-get install tesseract-ocr -y
+    sudo apt-get install -y poppler-utils

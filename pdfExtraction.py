@@ -1,9 +1,24 @@
-from PyPDF2.generic import ArrayObject, NumberObject
+# Import libraries
+from PIL import Image
+import pytesseract
+import sys
+from pdf2image import convert_from_path
+import os
 
-from pdfminer.high_level import extract_pages, extract_text
-from pdfminer.layout import LTTextContainer, LTChar, LTPage, LTFigure, LTImage, LTAnno
+
+from pdfminer.high_level import extract_pages
+from pdfminer.converter import TextConverter
+from pdfminer.pdfpage import PDFPage
+from pdfminer.pdfinterp import PDFResourceManager
+from pdfminer.pdfinterp import PDFPageInterpreter
+from pdfminer.layout import LTTextContainer, LTChar, LTPage, LTFigure, LTImage, LTAnno, LAParams
 
 import random
+from decorators import Counter, timer
+from io import StringIO
+import warnings
+
+warnings.filterwarnings("ignore", message="divide by zero encountered in divide")
 
 
 def randomColor():
@@ -96,19 +111,38 @@ def extractTextElts(file: str, sliceIt: bool = False) -> list:
 
     return textElts
 
-
-def extractFullText(file: str, sorted: bool = False) -> str:
+@Counter
+def extractFullText(path: str) -> str:
     '''
         Returns the full text of a file
         Could Implemented the possibility to sort the words (for now vertically, then horizontally, which may be far from the layout)
     '''
-    print(f"Extract text from {file}")
-    try:
-        return extract_text(file)
-    except:
-        print(f"Could not load the PDF ...")
-        return ""
-        
+    print(f"Extract text from {path}")
+
+    if path.endswith('.pdf'):
+        try:
+            with open(path, 'rb') as file:
+                output = StringIO()
+                manager = PDFResourceManager()
+                converter = TextConverter(manager, output, laparams=LAParams())
+                interpreter = PDFPageInterpreter(manager, converter)
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore")
+                    for page in PDFPage.get_pages(file, check_extractable=False):
+                        interpreter.process_page(page)
+            converter.close()
+            text = output.getvalue()
+            output.close()
+
+            if len(text)<200:
+                return extractFullTextWithOCR(path)
+            return text
+        except Exception as e:
+            print(f"Could not load the PDF ...", e)
+            return ""
+    else:
+        print("Could not load the file extension")
+
 
 def extractImages(file: str) -> list[tuple[float, float, float, float]]:
     imagesBbox = []
@@ -118,3 +152,55 @@ def extractImages(file: str) -> list[tuple[float, float, float, float]]:
             imagesBbox.append((element.x0, page_layout.height - element.y1, element.width, element.height))
 
     return imagesBbox
+
+def extractFullTextWithOCR(path: str):
+    dir = '/'.join(path.split('/')[:-1])
+    print('\tOCR needed')
+    with open('./logs.txt', 'a+') as logs:
+        logs.write(path)
+    pages = convert_from_path(path, 500)
+    image_counter=1
+    for page in pages:
+        filename=os.path.join(dir, "page_"+str(image_counter)+".jpg")
+        #filename = dir + "/page_"+str(image_counter)+".jpg"
+        page.save(filename, 'JPEG')
+        image_counter+=1
+    
+    output = StringIO()
+    for i in range(1, image_counter):
+        filename=os.path.join(dir, "page_"+str(i)+".jpg")
+        #filename = dir + "/page_"+str(i)+".jpg"
+        text = str(((pytesseract.image_to_string(Image.open(filename)))))
+        output.write(text)
+        os.remove(filename)
+
+    fileText = output.getvalue()
+    output.close()
+    return fileText
+
+def extractTextGoogleCloud(path: str):
+    from google.cloud import vision
+    import io
+    client = vision.ImageAnnotatorClient()
+
+    with io.open(path, 'rb') as image_file:
+        content = image_file.read()
+
+    image = vision.Image(content=content)
+
+    response = client.text_detection(image=image)
+    texts = response.text_annotations
+    print('Texts:')
+    for text in texts:
+        print('\n"{}"'.format(text.description))
+
+        vertices = (['({},{})'.format(vertex.x, vertex.y)
+                    for vertex in text.bounding_poly.vertices])
+
+        print('bounds: {}'.format(','.join(vertices)))
+
+    if response.error.message:
+        raise Exception(
+            '{}\nFor more info on error messages, check: '
+            'https://cloud.google.com/apis/design/errors'.format(
+                response.error.message))

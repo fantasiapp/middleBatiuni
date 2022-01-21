@@ -71,10 +71,21 @@ def visualizeSVM():
 
     # Put the result into a color plot
     Z = Z.reshape(xx.shape)
+    uniques = list(set(y_test))
+    for i in range(len(Z)):
+        for j in range(len(Z[0])):
+            Z[i][j] = uniques.index(Z[i][j])
+
     plt.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
 
     # Plot also the training points
-    plt.scatter(X_test[:, 0], X_test[:, 1], c=y_test, cmap=plt.cm.coolwarm)
+    colors = {}
+    for label in uniques:
+        colors[label] = [np.random.random() for _ in range(3)]
+    
+    c = [colors[y] for y in y_test]
+
+    plt.scatter(X_test[:, 0], X_test[:, 1], c=c, marker=(5,0), cmap=plt.cm.coolwarm)
     plt.xlabel('Dimension 1')
     plt.ylabel('Dimension 2')
     plt.xlim(xx.min(), xx.max())
