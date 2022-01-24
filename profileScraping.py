@@ -13,7 +13,7 @@ package_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append('/var/fantasiapp/batiUni/middle/')
 
 from bdd import executeRequest
-
+import spell
 '''
     Load dictionaries to match NAF codes and activity denomination
 '''
@@ -124,7 +124,7 @@ def handleSearchEstablishmentsByDenomination(resList: list):
 def getEnterpriseDataFrom(siren = None, siret=None, subName=None):
     
     if subName:
-        query = querySearchEstablishmentsByDenomination(str(subName).upper())
+        query = querySearchEstablishmentsByDenomination(spell.correction(subName.upper()))
         handler = handleSearchEstablishmentsByDenomination
     elif siren:
         pass
