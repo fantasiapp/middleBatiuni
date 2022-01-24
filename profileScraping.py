@@ -131,7 +131,7 @@ def getEnterpriseDataFrom(siren = None, siret=None, subName=None):
     elif siret:
         pass
     
-    status, msg, data = "error", "An unexpected error occured", None
+    status, msg, data = "error", "An unexpected error occured", {'EstablishmentsFields': [], 'EstablishmentsValues': {}}
     try:
         resList = executeRequest(query, dml=True)
         if not resList:
