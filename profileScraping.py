@@ -5,7 +5,6 @@ from decorators import *
 import os
 import sys
 
-
 NAF_classe_dict = {}
 NAF_sous_classe_dict = {}
 
@@ -33,22 +32,6 @@ def getClasseByNAF(code: str) -> str:
 def getSousClasseByNAF(code: str) -> str:
     return NAF_sous_classe_dict.get(code)
 
-class LegalUnit:
-
-    fields = ['denomination', 'activite_principale', 'adresse_siege', 'siren', 'siret_siege']
-
-    def extractFields(data: dict) -> dict:
-        return {
-            'denomination': data['denomination'],
-            'activite_principale': getSousClasseByNAF(data["activite_principale"]) or getClasseByNAF(data["activite_principale"]),
-            'adresse_siege': data['etablissement_siege']['geo_adresse'],
-            'siren': data['siren'],
-            'siret_siege': data['etablissement_siege']['siret']
-        }
-
-    @classmethod
-    def getFields(cls) -> list[str]:
-        return cls.fields
 # @timer
 # def searchUnitesLegalesByDenomination(denomination: str) -> dict:
 #     '''
@@ -109,14 +92,16 @@ def handleSearchUnitesLegalesByDenomination(resList: list):
     pass
 
 def querySearchEstablishmentsByDenomination(denomination: str):
-    return f'SELECT denominationUniteLegale, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, activitePrincipaleEtablissement FROM etablissements JOIN unites_legales ON etablissements.siren=unites_legales.siren WHERE denominationUniteLegale LIKE "{denomination}%" LIMIT 50'
+    return f'SELECT denominationUniteLegale, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, activitePrincipaleEtablissement, siret, siren  FROM etablissements JOIN unites_legales ON etablissements.siren=unites_legales.siren WHERE denominationUniteLegale LIKE "{denomination}%" LIMIT 50'
 
 def handleSearchEstablishmentsByDenomination(resList: list):
     for i in range(len(resList)):
         res = resList[i]
-        resList[i] = [res[0], f'{res[1]} {res[2]} {res[3]}, {res[4]} {res[5]}', getSousClasseByNAF(res[3]) or getClasseByNAF(res[3]) or "Activité inconnue"]
+        siren = res[8]
+        cleTva = (12+(3*int(siren)%97))%97
+        resList[i] = [res[0], f'{res[1]} {res[2]} {res[3]}, {res[4]} {res[5]}', getSousClasseByNAF(res[6]) or getClasseByNAF(res[6]) or "Activité inconnue", res[7], f'FR{cleTva}{siren}']
     return {
-        'EstablishmentsFields': ['nom', 'adresse', 'activitePrincipale'],
+        'EstablishmentsFields': ['nom', 'adresse', 'activitePrincipale', 'siret', 'NTVAI'],
         'EstablishmentsValues': {i: resList[i] for i in range(len(resList))
         }
     }
