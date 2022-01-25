@@ -109,7 +109,7 @@ def handleSearchUnitesLegalesByDenomination(resList: list):
     pass
 
 def querySearchEstablishmentsByDenomination(denomination: str):
-    return f'SELECT denominationUniteLegale, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, activitePrincipaleEtablissement FROM etablissements JOIN unites_legales ON etablissements.siren=unites_legales.siren WHERE denominationUniteLegale LIKE "{denomination}%" LIMIT 1000'
+    return f'SELECT denominationUniteLegale, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, activitePrincipaleEtablissement FROM etablissements JOIN unites_legales ON etablissements.siren=unites_legales.siren WHERE denominationUniteLegale LIKE "{denomination}%" LIMIT 10'
 
 def handleSearchEstablishmentsByDenomination(resList: list):
     for i in range(len(resList)):
@@ -131,7 +131,7 @@ def getEnterpriseDataFrom(siren = None, siret=None, subName=None):
     elif siret:
         pass
     
-    status, msg, data = "error", "An unexpected error occured", None
+    status, msg, data = "error", "An unexpected error occured", {}
     try:
         resList = executeRequest(query, dml=True)
         if not resList:
