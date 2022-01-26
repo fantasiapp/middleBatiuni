@@ -92,11 +92,8 @@ def handleSearchUnitesLegalesByDenomination(resList: list):
     pass
 
 def querySearchEstablishmentsByDenomination(denomination: str):
-<<<<<<< HEAD
-    return f'SELECT denominationUniteLegale, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, activitePrincipaleEtablissement FROM etablissements JOIN unites_legales ON etablissements.siren=unites_legales.siren WHERE denominationUniteLegale LIKE "{denomination}%" LIMIT 10'
-=======
     return f'SELECT denominationUniteLegale, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, activitePrincipaleEtablissement, siret, etablissements.siren  FROM etablissements JOIN unites_legales ON etablissements.siren=unites_legales.siren WHERE denominationUniteLegale LIKE "{denomination}%" LIMIT 50'
->>>>>>> db1dcedbd7ee5b4bd36aa797e1f89dac556738a4
+
 
 def handleSearchEstablishmentsByDenomination(resList: list):
     for i in range(len(resList)):
