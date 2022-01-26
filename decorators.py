@@ -23,8 +23,8 @@ class Counter:
 
     def __init__(self, function):
         self.function = function
-        self.count = -1
-        self.total = -1
+        self.count = 0
+        self.total = 1
         self.function.startCount = Counter.startCount
 
     def __call__(self, *args, **kwargs):

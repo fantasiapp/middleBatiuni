@@ -1,10 +1,9 @@
 from pdfExtraction import *
-
+import re
 
 ###############
 # Definitions #
 ###############
-
 
 # Classes
 
@@ -31,6 +30,108 @@ class Split:
 
     def __gt__(self, other):
         return self.criteria > other.criteria
+
+class Extractor:
+
+    def __init__(self, path: str):
+        self.path = path
+        text = extractFullText(path)
+        text = ' '.join(text.split('\n'))
+        while '  ' in text:
+            text = text.replace('  ', ' ')
+        self.text = text
+
+    def regexSearch(self, pattern, groups: list[tuple]):
+        m = re.search(pattern, self.text)
+        return {field: m.group(groupIndex) if m else None for (field, groupIndex) in groups}
+
+    def getValidityPeriod(self):
+        pattern = r'du\s.*?(\d\d\/\d\d\/\d\d\d\d)\s.*?au\s.*?(\d\d\/\d\d\/\d\d\d\d)'
+        return self.regexSearch(pattern, [('validityBegin', 1), ('validityEnd', 2)])
+
+    def getValidityEnd(self):
+        pattern = r'[Vv][Aa][Ll](([Aa][Bb][Ll][Ee])|([Ii][Dd][Ii][Tt][ÉéEe]))\s.*?(\d\d\/\d\d\/\d\d\d\d)'
+        return self.regexSearch(pattern, [('validityEnd', 4)])
+
+    def getEmailAdress(self):
+        pattern = r'\S+\@\S+.(fr|com|net|org)'
+        return self.regexSearch(pattern, [('emailAdress', 1)])
+
+    def getPhoneNumber(self):
+        pattern = r'\D\s((\d\d)([\.\- ]?))((\d\d)([\.\- ]?))((\d\d)([\.\- ]?))((\d\d)([\.\- ]?))((\d\d)([\.\- ]?))\D'
+        m = re.search(pattern, self.text)
+        return {
+            'phoneNumber': m.group(2)+m.group(5)+m.group(8)+m.group(11)+m.group(14)
+        }
+
+    def checkValidity(self):
+        print("Not implemented")
+
+class QualibatExtractor(Extractor):
+    '''
+        Document très formatté
+        Attention toutefois aux scans, qui pourraient induire des erreurs d'alignement, d'espacement, etc
+
+        TODO : Codes et qualifications
+    '''
+
+    def getNumeroQualibat(self):
+        pattern = r'[Nn][Uu][Mm][Ee][Rr][Oo].*(E-E\d*)'
+        return self.regexSearch(pattern, [('numeroQualibat', 1)])
+
+    def getCapital(self):
+        pattern = r'[Cc][Aa][Pp][Ii][Tt][Aa][Ll]\s.*?\s(\d+([\. ]\d\d\d)*)\s+\D'
+        return self.regexSearch(pattern, [('capital', 1)])
+
+
+    def getRevenue(self):
+        pattern = r'[Cc][Hh][Ii][Ff][Ff][Rr][Ee].*?\s(\d+([\. ]\d+)*)\s+\D'
+        return self.regexSearch(pattern, [('revenue', 1)])
+
+    def getNumeroCaisseCongesPayes(self):
+        pattern = r'[Cc][Oo][Nn][Gg][ÉéEe][Ss]\s[Pp][Aa][Yy][ÉéEe][Ss][ :]*(\w*)'
+        return self.regexSearch(pattern, [('numeroCaisseCongesPayes', 1)])
+
+    def getAssuranceResponsabiliteTravaux(self):
+        '''
+            Doesn't work so far ...
+        '''
+        pattern = r'[Rr][ÉéEe][Ss][Pp][Oo][Nn][Ss][Aa][Bb][Ii][Ll][Ii][Tt][ÉéEe]\s[Tt][Rr][Aa][Vv][Aa][Uu][Xx][ :]*(\w*)'
+        return self.regexSearch(pattern, [('assuranceReponsabiliteTravaux', 1)])
+
+    def getAssuranceResponsabiliteCivile(self):
+        '''
+            Doesn't work so far ...
+        '''
+        pattern = r'[Rr][ÉéEe][Ss][Pp][Oo][Nn][Ss][Aa][Bb][Ii][Ll][Ii][Tt][ÉéEe]\s[Cc][Ii][Vv][Ii][Ll][Ee][ :]*(\w*)'
+        return self.regexSearch(pattern, [('assuranceReponsabiliteCivile', 1)])
+
+    def getSiren(self):
+        '''
+            Doesn't work so far ...
+        '''
+        pattern = r'[Ss][Ii][Rr][Ee][Nn][ :]*([0-9 ]*)'
+        return self.regexSearch(pattern, [('siren', 1)])
+
+    def checkValidity(self):
+        '''
+            Not sure whether this function should be there
+        '''
+        
+        Extractor.checkValidity(self)
+
+
+'''
+doc1 = Extractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\middleBatiuni\\assets\\attestation_rc_dc\\Attestation RC decennale .pdf")
+doc2 = QualibatExtractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\middleBatiuni\\assets\\qualibats\\qualibat_1.pdf")
+'''
+doc3 = QualibatExtractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\documents\\QUALIBAT - RGE.pdf")
+print(doc3.getNumeroCaisseCongesPayes())
+print(doc3.getAssuranceResponsabiliteTravaux())
+print(doc3.getAssuranceResponsabiliteCivile())
+print(doc3.getValidityEnd())
+doc3.checkValidity()
+
 
 ########################
 # Exportable functions #
@@ -119,7 +220,6 @@ def pruneTree(tree: Block)->Block:
         tree.children = []
 
     return tree
-
 
 def buildTree(words : list[TextElt], to_build: int, pruning: bool) -> list:
     '''

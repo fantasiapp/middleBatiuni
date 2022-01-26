@@ -9,9 +9,10 @@ NAF_classe_dict = {}
 NAF_sous_classe_dict = {}
 
 package_directory = os.path.dirname(os.path.abspath(__file__))
-sys.path.append('/var/fantasiapp/batiUni/middle/')
 
-from bdd import executeRequest
+from bdd import DBConnector
+sireneConnector = DBConnector('Sirene')
+
 import spell
 '''
     Load dictionaries to match NAF codes and activity denomination
@@ -31,53 +32,6 @@ def getClasseByNAF(code: str) -> str:
 
 def getSousClasseByNAF(code: str) -> str:
     return NAF_sous_classe_dict.get(code)
-
-# @timer
-# def searchUnitesLegalesByDenomination(denomination: str) -> dict:
-#     '''
-#         Recherche les unités légales qui s'écrivent exactement avec cette dénomination (à la normalisation près)
-#         Retour sous la forme d'un dictionnaire avec une clé "error" ou "unites_legales" selon le succès de la requête
-#     '''
-#     status, msg, data = "error", "An unexpected error occured", None
-#     denomination_formatted = str(denomination).upper()
-   
-#     try:
-#         resList = executeRequest(f'SELECT siren, activitePrincipaleUniteLegale, nicSiegeUniteLegale FROM unites_legales WHERE denominationUniteLegale LIKE "{denomination_formatted}" LIMIT 10', dml=True)
-#         print(resList)
-#         if not resList:
-#             status = "info"
-#             msg = "Aucun établissement ne semble porter ce nom."
-#         elif len(resList) == 1:
-#             status="OK"
-#             msg="Oll Korrekt"
-            
-#             siren=resList[0][0]
-#             nic_siege = resList[0][2]
-#             cle_tva = (12+(3*int(siren)%97))%97
-#             siege = executeRequest(f'SELECT numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement FROM etablissements WHERE siren LIKE "{siren}" AND nic LIKE "{nic_siege}" LIMIT 10', dml=True)
-#             data = {
-#                     'denomination': denomination,
-#                     'siren': siren,
-#                     'code_activite_principale' : resList[0][1],
-#                     'libelle_activite_principale': getSousClasseByNAF(resList[0][1]) or getClasseByNAF(resList[0][1]) or "Activité inconnue",
-#                     'tva': f'FR{cle_tva}{resList[0][0]}'
-#                     }
-#             if siege:
-#                 print(siege)
-#                 siege = siege[0]
-#                 data['adresse'] = f'{siege[0]} {siege[1]} {siege[2]}, {siege[3]} {siege[4]}'
-#         else:
-#             status="info"
-#             msg=f'Pas assez d\'informations. {len(resList)} matchs trouvés'
-
-#     except:
-#         print("Something wrong happened ...")
-
-#     return {
-#         'status': status,
-#         'msg': msg,
-#         'data': data
-#     }
 
 def querySearchEtablissemenstBySiren(siren: str):
     return f'SELECT siret, nic, activitePrincipaleEtablissement, numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement FROM etablissements WHERE siren LIKE "{siren}"'
@@ -118,7 +72,7 @@ def getEnterpriseDataFrom(siren = None, siret=None, subName=None):
     
     status, msg, data = "error", "An unexpected error occured", {'EstablishmentsFields': [], 'EstablishmentsValues': {}}
     try:
-        resList = executeRequest(query, dml=True)
+        resList = sireneConnector.executeRequest(query, dml=True)
         if not resList:
             status = "info"
             msg = "Aucun résultat ne semble porter ce nom."

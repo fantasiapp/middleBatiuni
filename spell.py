@@ -1,12 +1,13 @@
 import sys
 sys.path.append('/var/fantasiapp/batiUni/middle/')
-import bdd
+from bdd import DBConnector
+sireneConnector = DBConnector('Sirene')
 
 import re
 from collections import Counter
 
 def Names():
-    return [res[0] for res in bdd.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
+    return [res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
 
 NAMES = Counter(Names())
 
