@@ -1,6 +1,14 @@
 from pdfExtraction import *
 import re
 
+from bdd import DBConnector
+
+version = os.path.dirname(__file__).split('/')[-1]
+if version in ['temp', 'work', 'distrib', 'current']:
+    batiuniConnector = DBConnector('batiUni'+version.capitalize())
+else:
+    batiuniConnector = DBConnector('batiUniWork')
+
 ###############
 # Definitions #
 ###############
@@ -65,6 +73,7 @@ class Extractor:
         }
 
     def checkValidity(self):
+        print(batiuniConnector.executeRequest('SELECT id FROM backBatiUni_userprofile', True))
         print("Not implemented")
 
 class QualibatExtractor(Extractor):
@@ -125,7 +134,9 @@ class QualibatExtractor(Extractor):
 doc1 = Extractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\middleBatiuni\\assets\\attestation_rc_dc\\Attestation RC decennale .pdf")
 doc2 = QualibatExtractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\middleBatiuni\\assets\\qualibats\\qualibat_1.pdf")
 '''
-doc3 = QualibatExtractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\documents\\QUALIBAT - RGE.pdf")
+#doc3 = QualibatExtractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\documents\\QUALIBAT - RGE.pdf")
+doc3 = QualibatExtractor('./assets/qualibats/qualibat_1.pdf')
+
 print(doc3.getNumeroCaisseCongesPayes())
 print(doc3.getAssuranceResponsabiliteTravaux())
 print(doc3.getAssuranceResponsabiliteCivile())
