@@ -48,6 +48,7 @@ class Extractor:
         while '  ' in text:
             text = text.replace('  ', ' ')
         self.text = text
+        print(text)
 
     def regexSearch(self, pattern, groups: list[tuple]):
         m = re.search(pattern, self.text)
@@ -63,18 +64,41 @@ class Extractor:
 
     def getEmailAdress(self):
         pattern = r'\S+\@\S+.(fr|com|net|org)'
-        return self.regexSearch(pattern, [('emailAdress', 1)])
+        return self.regexSearch(pattern, [('emailAdress', 0)])
 
     def getPhoneNumber(self):
         pattern = r'\D\s((\d\d)([\.\- ]?))((\d\d)([\.\- ]?))((\d\d)([\.\- ]?))((\d\d)([\.\- ]?))((\d\d)([\.\- ]?))\D'
         m = re.search(pattern, self.text)
         return {
-            'phoneNumber': m.group(2)+m.group(5)+m.group(8)+m.group(11)+m.group(14)
+            'phoneNumber': m.group(2)+m.group(5)+m.group(8)+m.group(11)+m.group(14) if m else None
         }
 
+    def getSiren(self):
+        pattern = r'[Ss][Ii][Rr][Ee][Nn].+?(\d+)\s'
+        return self.regexSearch(pattern, [('siren', 1)])
+
+    def getSiret(self):
+        pattern = r'[Ss][Ii][Rr][Ee][Tt].+?([\d ]+)\s'
+        return self.regexSearch(pattern, [('siret', 1)])
+
+    def getEverything(self):
+        res = {}
+        res.update(self.getValidityPeriod())
+        res.update(self.getValidityEnd())
+        res.update(self.getEmailAdress())
+        res.update(self.getEmailAdress())
+        res.update(self.getPhoneNumber())
+        res.update(self.getSiren())
+        res.update(self.getSiret())
+        return res
+
     def checkValidity(self):
-        print(batiuniConnector.executeRequest('SELECT id FROM backBatiUni_userprofile', True))
-        print("Not implemented")
+        # print(batiuniConnector.executeRequest('SELECT id FROM backBatiUni_userprofile', True))
+        '''
+            In order to check the coherence of the document, we want to compare it with the already gathered  data for this user.
+        '''
+        print("Extractor.checkValidity not implemented")
+
 
 class QualibatExtractor(Extractor):
     '''
@@ -85,64 +109,63 @@ class QualibatExtractor(Extractor):
     '''
 
     def getNumeroQualibat(self):
-        pattern = r'[Nn][Uu][Mm][Ee][Rr][Oo].*(E-E\d*)'
+        pattern = r'[Nn][Uu][Mm][ÉéEe][Rr][Oo].+?(E-E\d+)'
         return self.regexSearch(pattern, [('numeroQualibat', 1)])
 
     def getCapital(self):
         pattern = r'[Cc][Aa][Pp][Ii][Tt][Aa][Ll]\s.*?\s(\d+([\. ]\d\d\d)*)\s+\D'
         return self.regexSearch(pattern, [('capital', 1)])
 
-
     def getRevenue(self):
         pattern = r'[Cc][Hh][Ii][Ff][Ff][Rr][Ee].*?\s(\d+([\. ]\d+)*)\s+\D'
         return self.regexSearch(pattern, [('revenue', 1)])
 
     def getNumeroCaisseCongesPayes(self):
-        pattern = r'[Cc][Oo][Nn][Gg][ÉéEe][Ss]\s[Pp][Aa][Yy][ÉéEe][Ss][ :]*(\w*)'
+        pattern = r'[Cc][Oo][Nn][Gg][ÉéEe][Ss]\s[Pp][Aa][Yy][ÉéEe][Ss][ :].+?(\d\w+?)\s'
         return self.regexSearch(pattern, [('numeroCaisseCongesPayes', 1)])
 
     def getAssuranceResponsabiliteTravaux(self):
-        '''
-            Doesn't work so far ...
-        '''
-        pattern = r'[Rr][ÉéEe][Ss][Pp][Oo][Nn][Ss][Aa][Bb][Ii][Ll][Ii][Tt][ÉéEe]\s[Tt][Rr][Aa][Vv][Aa][Uu][Xx][ :]*(\w*)'
+        pattern = r'[Rr][ÉéEe][Ss][Pp][Oo][Nn][Ss][Aa][Bb][Ii][Ll][Ii][Tt][ÉéEe]\s[Tt][Rr][Aa][Vv][Aa][Uu][Xx].+?([A-Z][A-Z]+ .*?\d+)'
         return self.regexSearch(pattern, [('assuranceReponsabiliteTravaux', 1)])
 
     def getAssuranceResponsabiliteCivile(self):
-        '''
-            Doesn't work so far ...
-        '''
-        pattern = r'[Rr][ÉéEe][Ss][Pp][Oo][Nn][Ss][Aa][Bb][Ii][Ll][Ii][Tt][ÉéEe]\s[Cc][Ii][Vv][Ii][Ll][Ee][ :]*(\w*)'
+        pattern = r'[Rr][ÉéEe][Ss][Pp][Oo][Nn][Ss][Aa][Bb][Ii][Ll][Ii][Tt][ÉéEe]\s[Cc][Ii][Vv][Ii][Ll][Ee].*?([A-Z][A-Z]+ .*?\d+)'
         return self.regexSearch(pattern, [('assuranceReponsabiliteCivile', 1)])
 
-    def getSiren(self):
-        '''
-            Doesn't work so far ...
-        '''
-        pattern = r'[Ss][Ii][Rr][Ee][Nn][ :]*([0-9 ]*)'
-        return self.regexSearch(pattern, [('siren', 1)])
+    def getEverything(self):
+        res = super().getEverything()
+        res.update(self.getNumeroQualibat())
+        res.update(self.getCapital())
+        res.update(self.getRevenue())
+        res.update(self.getNumeroCaisseCongesPayes())
+        res.update(self.getAssuranceResponsabiliteTravaux())
+        res.update(self.getAssuranceResponsabiliteCivile())
+        return res
 
     def checkValidity(self):
-        '''
-            Not sure whether this function should be there
-        '''
-        
         Extractor.checkValidity(self)
+
+class UrssafExtractor(Extractor):
+    
+    def getSecurityCode(self):
+        pattern = r'CODE DE SÉCURITÉ.+?([0-9A-Z]+)\s'
+        return self.regexSearch(pattern, [('securityCode', 1)])
+
+    def getEverything(self):
+        res = super().getEverything()
+        res.update(self.getSecurityCode())
+        return res
 
 
 '''
 doc1 = Extractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\middleBatiuni\\assets\\attestation_rc_dc\\Attestation RC decennale .pdf")
 doc2 = QualibatExtractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\middleBatiuni\\assets\\qualibats\\qualibat_1.pdf")
 '''
-#doc3 = QualibatExtractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\documents\\QUALIBAT - RGE.pdf")
-doc3 = QualibatExtractor('./assets/qualibats/qualibat_1.pdf')
-
-print(doc3.getNumeroCaisseCongesPayes())
-print(doc3.getAssuranceResponsabiliteTravaux())
-print(doc3.getAssuranceResponsabiliteCivile())
-print(doc3.getValidityEnd())
-doc3.checkValidity()
-
+extractor = QualibatExtractor('./assets/qualibats/qualibat_1.pdf')
+# extractor = UrssafExtractor('../documents/urssaf/URSSAF 2020.pdf')
+data = extractor.getEverything()
+for field in data:
+    print('{:>30} {:<30}'.format(field, str(data[field])))
 
 ########################
 # Exportable functions #

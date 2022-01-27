@@ -6,39 +6,44 @@ sireneConnector = DBConnector('Sirene')
 import re
 from collections import Counter
 
-def Names():
-    return [res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
+class Corrector:
+    NAMES = None
 
-NAMES = Counter(Names())
+    def __init__(self):
+        if not Corrector.NAMES:
+            Corrector.NAMES = Counter(self.Names())
 
-def P(name, N=sum(NAMES.values())):
-    return NAMES[name]/N
+    def Names(self):
+        return [res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
 
-def correction(name):
-    return max(candidates(name), key=P)
+    def P(self, name):
+        return Corrector.NAMES[name]
 
-def candidates(name):
-    return (known([name]) or known(edits1(name)) or known(edits2(name)) or [name])
+    def correction(self, name):
+        return max(self.candidates(name), key=self.P)
 
-def known(names):
-    return set(name for name in names if name in NAMES)
+    def candidates(self, name):
+        return (self.known([name]) or self.known(self.edits1(name)) or self.known(self.edits2(name)) or [name])
 
-def edits1(name):
-    characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890 '
-    splits = [(name[:i], name[i:]) for i in range(len(name)+1)]
-    deletes = [L + R[1:] for L,R in splits if R]
-    transposes = [L + R[1] + R[0] + R[2:] for L,R in splits if len(R)>1]
-    replaces = [L + c + R[1:] for L,R in splits if R for c in characters]
-    inserts = [L + c + R for L,R in splits for c in characters]
-    return set(deletes + transposes + replaces + inserts)
+    def known(self, names):
+        return set(name for name in names if name in Corrector.NAMES)
 
-def edits2(name):
-    return (e2 for e1 in edits1(name) for e2 in edits1(e1))
+    def edits1(self, name):
+        characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890 '
+        splits = [(name[:i], name[i:]) for i in range(len(name)+1)]
+        deletes = [L + R[1:] for L,R in splits if R]
+        transposes = [L + R[1] + R[0] + R[2:] for L,R in splits if len(R)>1]
+        replaces = [L + c + R[1:] for L,R in splits if R for c in characters]
+        inserts = [L + c + R for L,R in splits for c in characters]
+        return set(deletes + transposes + replaces + inserts)
+
+    def edits2(self, name):
+        return (e2 for e1 in self.edits1(name) for e2 in self.edits1(e1))
 
 if __name__=='__main__':
-    #print(NAMES)
+    corrector = Corrector()
     while 1:
         name = input().upper()
-        for candidate in candidates(name):
-            print(f'{candidate} :, {NAMES[candidate]}')
-        print("Best candidate : ", correction(name))
+        for candidate in corrector.candidates(name):
+            print(f'{candidate} :, {Corrector.NAMES[candidate]}')
+        print("Best candidate : ", corrector.correction(name))
