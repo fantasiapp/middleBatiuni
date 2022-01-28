@@ -23,12 +23,13 @@ class Corrector:
         return max(self.candidates(name), key=self.P)
 
     def candidates(self, name):
-        return (self.known([name]) or self.known(self.edits1(name)) or self.known(self.edits2(name)) or [name])
+        return (self.known([name]) or self.known(Corrector.edits1(name)) or self.known(Corrector.edits2(name)) or [name])
 
     def known(self, names):
         return set(name for name in names if name in Corrector.NAMES)
 
-    def edits1(self, name):
+    @classmethod
+    def edits1(cls, name):
         characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890 '
         splits = [(name[:i], name[i:]) for i in range(len(name)+1)]
         deletes = [L + R[1:] for L,R in splits if R]
@@ -37,8 +38,9 @@ class Corrector:
         inserts = [L + c + R for L,R in splits for c in characters]
         return set(deletes + transposes + replaces + inserts)
 
-    def edits2(self, name):
-        return (e2 for e1 in self.edits1(name) for e2 in self.edits1(e1))
+    @classmethod
+    def edits2(cls, name):
+        return (e2 for e1 in cls.edits1(name) for e2 in cls.edits1(e1))
 
 if __name__=='__main__':
     corrector = Corrector()
