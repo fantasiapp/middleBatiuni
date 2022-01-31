@@ -61,8 +61,8 @@ def handleSearchEstablishmentsByDenomination(resList: list):
         }
     }
 
+@apiCall
 def getEnterpriseDataFrom(siren = None, siret=None, subName=None):
-    
     if subName:
         corrector = spell.Corrector()
         query = querySearchEstablishmentsByDenomination(corrector.correction(subName.upper()))
@@ -72,20 +72,7 @@ def getEnterpriseDataFrom(siren = None, siret=None, subName=None):
     elif siret:
         pass
     
-    status, msg, data = "error", "An unexpected error occured", {'EstablishmentsFields': [], 'EstablishmentsValues': {}}
-    try:
-        resList = sireneConnector.executeRequest(query, dml=True)
-        if not resList:
-            status = "info"
-            msg = "Aucun résultat ne semble porter ce nom."
-        else:
-            status="OK"
-            msg="Oll Korrekt"
-            data = handler(resList)
-    except:
-        print("Something wrong happened ...")
-    return {
-        'status': status,
-        'msg': msg,
-        'data': data
-    }
+    resList = sireneConnector.executeRequest(query, dml=True)
+    if not resList:
+        return None
+    return handler(resList)
