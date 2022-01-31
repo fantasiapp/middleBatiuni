@@ -1,5 +1,7 @@
 from pdfExtraction import *
 import re
+import spell
+import requests
 
 from bdd import DBConnector
 
@@ -39,23 +41,46 @@ class Split:
     def __gt__(self, other):
         return self.criteria > other.criteria
 
+
+def regex2Approximation(s: str) -> list[str]:
+    '''
+        Given a string, this function generates close regex
+    '''
+    return ("".join(s[k] if k!=i and k!=j else '.' for k in range(len(s))) for i in range(len(s)) for j in range(i+1, len(s)))
+
 class Extractor:
 
     def __init__(self, path: str):
+        '''
+            Text pre-processing;
+            Should it be uppercased ?
+        '''
         self.path = path
-        text = extractFullText(path)
+        text = extractFullTextWithOCR(path)
         text = ' '.join(text.split('\n'))
         while '  ' in text:
             text = text.replace('  ', ' ')
         self.text = text
-        print(text)
+        # print(text)
 
-    def regexSearch(self, pattern, groups: list[tuple]):
+    def regexSearch(self, pattern, groups: list[tuple], header: str=""):
+        if header:
+            #On doit chercher ici si un endroit du texte ressemble à 
+            pattern2 = header + '\s.*?' + pattern
+            m = re.search(pattern2, self.text)
+            if m:
+                return {field: m.group(groupIndex) if m else None for (field, groupIndex) in groups}
+            for neighbor in spell.Corrector.edits1(header):
+                pattern2 = neighbor + '\s.*?' + pattern
+                m = re.search(pattern2, self.text)
+                if m:
+                    return {field: m.group(groupIndex) if m else None for (field, groupIndex) in groups}
         m = re.search(pattern, self.text)
+        # print("Search with pattern", pattern, "found", m.group(groups[0][1]) if m else None)
         return {field: m.group(groupIndex) if m else None for (field, groupIndex) in groups}
 
     def getValidityPeriod(self):
-        pattern = r'du\s.*?(\d\d\/\d\d\/\d\d\d\d)\s.*?au\s.*?(\d\d\/\d\d\/\d\d\d\d)'
+        pattern = r'du(\d\d\/\d\d\/\d\d\d\d)\s.*?au\s.*?(\d\d\/\d\d\/\d\d\d\d)'
         return self.regexSearch(pattern, [('validityBegin', 1), ('validityEnd', 2)])
 
     def getValidityEnd(self):
@@ -74,11 +99,11 @@ class Extractor:
         }
 
     def getSiren(self):
-        pattern = r'[Ss][Ii][Rr][Ee][Nn].+?(\d+)\s'
+        pattern = r'[Ss][Ii][Rr][Ee][Nn].+?([\d ]{9})\s'
         return self.regexSearch(pattern, [('siren', 1)])
 
     def getSiret(self):
-        pattern = r'[Ss][Ii][Rr][Ee][Tt].+?([\d ]+)\s'
+        pattern = r'[Ss][Ii][Rr][Ee][Tt].+?(\d{9} ?\d{5})\s'
         return self.regexSearch(pattern, [('siret', 1)])
 
     def getEverything(self):
@@ -148,24 +173,112 @@ class QualibatExtractor(Extractor):
 class UrssafExtractor(Extractor):
     
     def getSecurityCode(self):
-        pattern = r'CODE DE SÉCURITÉ.+?([0-9A-Z]+)\s'
-        return self.regexSearch(pattern, [('securityCode', 1)])
+        pattern = r'([0-9A-Z]+)\s'
+        return self.regexSearch(pattern, [('securityCode', 1)], header="CODE DE SÉCURITÉ")
 
     def getEverything(self):
         res = super().getEverything()
         res.update(self.getSecurityCode())
         return res
 
+class KbisExtractor(Extractor):
+    
+    def getValidityEnd(self):
+        pattern = r'qu\'au\s.*?(\d\d\/\d\d\/\d\d\d\d)'
+        return self.regexSearch(pattern, [('validityEnd', 1)])
+
+    def getSecurityCode(self):
+        '''
+            10 caractères alphanumériques
+        '''
+        pattern = r'(\w{10})\s'
+        return self.regexSearch(pattern, [('securityCode', 1)], header="vérification")
+    
+    def getManagementNumber(self):
+        pattern = r'(\d\d\d\d\w+)\s'
+        return self.regexSearch(pattern, [('managementNumber', 1)], header="gestion")
+
+    def getRcsNumber(self):
+        pattern = r'(\d\d\d \d\d\d \d\d\d) R.C.S'
+        return self.regexSearch(pattern, [('rcsNumber', 1)])
+
+    def getEverything(self):
+        res = super().getEverything()
+        res.update(self.getSecurityCode())
+        res.update(self.getManagementNumber())
+        res.update(self.getRcsNumber())
+
+        return res
+
+    def checkValidity(self):
+        '''
+            Strat moche : 
+                - Soit le code n'est pas reconnu
+                - Soit le code est reconnu, mais le KBIS date de plus de 3 mois
+                - Soit tout va bien
+        '''
+        from bs4 import BeautifulSoup
+        res = self.getSecurityCode()
+        if res['securityCode']:
+            page_infogreffe = requests.get('https://www.infogreffe.fr/controle/verif?codeVerif='+res['securityCode']).text
+            soup_infogreffe = BeautifulSoup(page_infogreffe, 'html.parser')
+            links = soup_infogreffe.find('div', {"class":"verif"}).find_all("p", {"class":"spacer"})
+            if(len(links)<4):
+                return {"status": "error",
+                        "code":res['securityCode'],
+                        "message":"Aucun extrait de KBIS trouvé pour ce code de vérification."
+                        }
+            elif soup_infogreffe.find("p", {"class":"error"}):
+                return {"status": "warning",
+                        "code":res['securityCode'],
+                        "message":"La commande de cet extrait de KBIS  est supérieure à 3 mois."
+                        }
+            else:
+                return {'status': 'OK',
+                        'code': res['securityCode'],
+                        'message': 'Cet extrait de KBIS est valide, est date de moins de 3 mois.'
+                        }
 
 '''
 doc1 = Extractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\middleBatiuni\\assets\\attestation_rc_dc\\Attestation RC decennale .pdf")
 doc2 = QualibatExtractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\middleBatiuni\\assets\\qualibats\\qualibat_1.pdf")
 '''
-extractor = QualibatExtractor('./assets/qualibats/qualibat_1.pdf')
+# extractor = QualibatExtractor('./assets/qualibats/qualibat_1.pdf')
 # extractor = UrssafExtractor('../documents/urssaf/URSSAF 2020.pdf')
+# extractor = KbisExtractor('./assets/kbis/KBIS 2021.pdf')
+
+# data = extractor.getEverything()
+# for field in data:
+#     print('{:>30} {:<30}'.format(field, str(data[field])))
+
+# extractor.checkValidity()
+
+def testAllKbis():
+    kbisDir = "../documents/kbis"
+    for file in (os.path.join(kbisDir, file) for file in os.listdir(kbisDir)):
+        print("Testing", file)
+        print(KbisExtractor(file).checkValidity())
+
+# testAllKbis()
+
+
+extractor = UrssafExtractor('../documents/urssaf/URSSAF 2020.pdf')
 data = extractor.getEverything()
 for field in data:
     print('{:>30} {:<30}'.format(field, str(data[field])))
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ########################
 # Exportable functions #

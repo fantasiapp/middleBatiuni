@@ -31,3 +31,27 @@ class Counter:
         self.count +=1
         print(f'{self.count}/{self.total} : ', end='')
         return self.function(*args, **kwargs)
+
+def apiCall(fn):
+    '''
+        Add status code, and default warning, OK, and error message.
+        Could enhance the handling of different warning cases.
+    '''
+    def wrapper(*args, **kwargs):
+        try:
+            res = fn(*args, **kwargs)
+            if not res:
+                return {'status': 'warning',
+                        'message': fn.__name__ + ' : No result found.'
+                        }
+            else:
+                res.update({
+                    'status': 'OK',
+                    'message': 'Oll Korrekt.'
+                    })
+                return res
+        except:
+            return {'status': 'error',
+                         'message': fn.__name__ + ' : An unexpecteed error occured.'
+                    }
+    return wrapper

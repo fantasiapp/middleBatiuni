@@ -124,7 +124,7 @@ def extractFullText(path: str) -> str:
             with open(path, 'rb') as file:
                 output = StringIO()
                 manager = PDFResourceManager()
-                converter = TextConverter(manager, output, laparams=LAParams())
+                converter = TextConverter(manager, output, laparams=LAParams(char_margin = 20), codec='utf-8')
                 interpreter = PDFPageInterpreter(manager, converter)
                 with warnings.catch_warnings():
                     warnings.filterwarnings("ignore")
