@@ -257,16 +257,21 @@ def testAllKbis():
     kbisDir = "../documents/kbis"
     for file in (os.path.join(kbisDir, file) for file in os.listdir(kbisDir)):
         print("Testing", file)
-        print(KbisExtractor(file).checkValidity())
+        try:
+            extractor = KbisExtractor(file)
+            print(extractor.getEverything())
+            print(extractor.checkValidity(), end="\n\n")
+        except:
+            print("Unable to read\n\n")
 
-# testAllKbis()
+#testAllKbis()
 
-
+'''
 extractor = UrssafExtractor('../documents/urssaf/URSSAF 2020.pdf')
 data = extractor.getEverything()
 for field in data:
     print('{:>30} {:<30}'.format(field, str(data[field])))
-
+'''
 
 
 
