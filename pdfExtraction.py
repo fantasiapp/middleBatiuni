@@ -1,7 +1,6 @@
 # Import libraries
 from PIL import Image
 import pytesseract
-import sys
 from pdf2image import convert_from_path
 import os
 
@@ -14,7 +13,7 @@ from pdfminer.pdfinterp import PDFPageInterpreter
 from pdfminer.layout import LTTextContainer, LTChar, LTPage, LTFigure, LTImage, LTAnno, LAParams
 
 import random
-from decorators import Counter, timer
+from decorators import Counter
 from io import StringIO
 import warnings
 
@@ -156,20 +155,16 @@ def extractImages(file: str) -> list[tuple[float, float, float, float]]:
 def extractFullTextWithOCR(path: str):
     dir = '/'.join(path.split('/')[:-1])
     print('\tOCR needed')
-    with open('./logs.txt', 'a+') as logs:
-        logs.write(path)
     pages = convert_from_path(path, 500)
     image_counter=1
     for page in pages:
         filename=os.path.join(dir, "page_"+str(image_counter)+".jpg")
-        #filename = dir + "/page_"+str(image_counter)+".jpg"
         page.save(filename, 'JPEG')
         image_counter+=1
     
     output = StringIO()
     for i in range(1, image_counter):
         filename=os.path.join(dir, "page_"+str(i)+".jpg")
-        #filename = dir + "/page_"+str(i)+".jpg"
         text = str(((pytesseract.image_to_string(Image.open(filename)))))
         output.write(text)
         os.remove(filename)

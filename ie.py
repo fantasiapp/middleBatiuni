@@ -70,7 +70,7 @@ class Extractor:
             m = re.search(pattern2, self.text)
             if m:
                 return {field: m.group(groupIndex) if m else None for (field, groupIndex) in groups}
-            for neighbor in spell.Corrector.edits1(header):
+            for neighbor in spell.edits1(header):
                 pattern2 = neighbor + '\s.*?' + pattern
                 m = re.search(pattern2, self.text)
                 if m:

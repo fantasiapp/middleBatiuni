@@ -30,11 +30,12 @@
 import requests
 
 from decorators import apiCall
+API_URL = "https://api-adresse.data.gouv.fr/search/"
 
 @apiCall
 def getCoordinatesFrom(raw: str = ""):
-    url = "https://api-adresse.data.gouv.fr/search/"
-    results = requests.get(url+"?q="+'+'.join(raw.split(' '))+'&limit=1').json()['features']
+    
+    results = requests.get(API_URL+"?q="+'+'.join(raw.split(' '))+'&limit=1').json()['features']
     if not results:
         return None
     return {'adress': results[0]['properties']['label'],
