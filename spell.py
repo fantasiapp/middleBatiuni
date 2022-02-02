@@ -4,20 +4,17 @@ sys.path.append('/var/fantasiapp/batiUni/middle/')
 from bdd import DBConnector
 sireneConnector = DBConnector('Sirene')
 
+def Names():
+    print("\tLoading enterprise names in RAM")
+    return [res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
+
+NAMES = Names()
 
 class Corrector:
-    
-    @classmethod
-    def Names(cls):
-        print("\tLoading enterprise names in RAM")
-        return [res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
-
-    
-    NAMES = Names()
-
+       
     @classmethod
     def P(cls, name):
-        return cls.NAMES[name]
+        return NAMES[name]
 
     @classmethod
     def correction(cls, name):
