@@ -24,7 +24,7 @@ class Corrector:
 
     @classmethod
     def candidates(cls, name):
-        return (cls.known([name]) or cls.known(edits1(name)) or cls.known((name)) or [name])
+        return (cls.known([name]) or cls.known(edits1(name)) or cls.known(edits2(name)) or [name])
 
     @classmethod
     def known(cls, names):
