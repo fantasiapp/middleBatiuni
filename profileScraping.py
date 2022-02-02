@@ -71,7 +71,7 @@ def getEnterpriseDataFrom(siren = None, siret=None, subName=None):
     elif siret:
         pass
     
-    print("\tQuery for name", subName_corrected)
+    print("\tQuery for name", subName, "corrected in", subName_corrected)
     resList = sireneConnector.executeRequest(query, dml=True)
     print("\t", len(resList), "results found.")
     if not resList:
