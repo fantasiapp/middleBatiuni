@@ -7,12 +7,13 @@ sireneConnector = DBConnector('Sirene')
 
 class Corrector:
     
-    NAMES = None
-    
     @classmethod
     def Names(cls):
         print("\tLoading enterprise names in RAM")
         return [res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
+
+    
+    NAMES = Names()
 
     @classmethod
     def P(cls, name):
