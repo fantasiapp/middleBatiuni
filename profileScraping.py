@@ -62,8 +62,7 @@ def handleSearchEstablishmentsByDenomination(resList: list):
 @apiCall
 def getEnterpriseDataFrom(siren = None, siret=None, subName=None):
     if subName:
-        corrector = spell.Corrector()
-        subName_corrected = corrector.correction(subName.upper())
+        subName_corrected = spell.Corrector.correction(subName.upper())
         query = querySearchEstablishmentsByDenomination(subName_corrected)
         handler = handleSearchEstablishmentsByDenomination
     elif siren:

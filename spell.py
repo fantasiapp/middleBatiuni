@@ -4,26 +4,31 @@ sys.path.append('/var/fantasiapp/batiUni/middle/')
 from bdd import DBConnector
 sireneConnector = DBConnector('Sirene')
 
-from collections import Counter
 
 class Corrector:
-    print("\tLoading enterprise names in RAM")
-    NAMES = [res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
+    
+    NAMES = None
+    
+    @classmethod
+    def Names(cls):
+        print("\tLoading enterprise names in RAM")
+        return [res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
 
-    def __init__(self):
-        pass
+    @classmethod
+    def P(cls, name):
+        return cls.NAMES[name]
 
-    def P(self, name):
-        return Corrector.NAMES[name]
+    @classmethod
+    def correction(cls, name):
+        return max(cls.candidates(name), key=cls.P)
 
-    def correction(self, name):
-        return max(self.candidates(name), key=self.P)
+    @classmethod
+    def candidates(cls, name):
+        return (cls.known([name]) or cls.known(edits1(name)) or cls.known((name)) or [name])
 
-    def candidates(self, name):
-        return (self.known([name]) or self.known(edits1(name)) or self.known((name)) or [name])
-
-    def known(self, names):
-        return set(name for name in names if name in Corrector.NAMES)
+    @classmethod
+    def known(cls, names):
+        return set(name for name in names if name in cls.NAMES)
 
 def edits1(name):
     characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890 '
