@@ -58,7 +58,7 @@ def handleSearchEstablishmentsByDenomination(resList: list):
     return {
         'EstablishmentsFields': ['nom', 'adresse', 'activitePrincipale', 'siret', 'NTVAI'],
         'EstablishmentsValues': {i: resList[i] for i in range(len(resList))
-        }
+                                }
     }
 
 @apiCall
