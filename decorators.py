@@ -41,17 +41,17 @@ def apiCall(fn):
         try:
             res = fn(*args, **kwargs)
             if not res:
-                return {'status': 'warning',
+                return {fn.__name__: 'warning',
                         'message': fn.__name__ + ' : No result found.'
                         }
             else:
                 res.update({
-                    'status': 'OK',
+                    fn.__name__: 'OK',
                     'message': 'Oll Korrekt.'
                     })
                 return res
         except:
-            return {'status': 'error',
-                    'message': fn.__name__ + ' : An unexpecteed error occured.'
+            return {fn.__name__: 'error',
+                    'message': ' : An unexpecteed error occured.'
                     }
     return wrapper
