@@ -7,15 +7,15 @@ sireneConnector = DBConnector('Sirene')
 from collections import Counter
 
 class Corrector:
-    NAMES = None
-
-    def __init__(self):
-        if not Corrector.NAMES:
-            Corrector.NAMES = Counter(self.Names())
-
-    def Names(self):
+    
+    @classmethod
+    def Names(cls):
         print("\tLoading enterprise names in RAM")
         return [res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
+    NAMES = Names()
+
+    def __init__(self):
+        pass
 
     def P(self, name):
         return Corrector.NAMES[name]

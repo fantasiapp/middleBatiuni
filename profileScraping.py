@@ -1,9 +1,7 @@
-import requests
 import csv
 
 from decorators import *
 import os
-import sys
 
 NAF_classe_dict = {}
 NAF_sous_classe_dict = {}
