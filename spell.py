@@ -4,9 +4,11 @@ sys.path.append('/var/fantasiapp/batiUni/middle/')
 from bdd import DBConnector
 sireneConnector = DBConnector('Sirene')
 
+from collections import Counter
+
 def Names():
     print("\tLoading enterprise names in RAM")
-    return [res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
+    return Counter([res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)])
 
 NAMES = Names()
 
