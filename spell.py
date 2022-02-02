@@ -26,7 +26,7 @@ class Corrector:
 
     @classmethod
     def known(cls, names):
-        return set(name for name in names if name in cls.NAMES)
+        return set(name for name in names if name in NAMES)
 
 def edits1(name):
     characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890 '
@@ -70,7 +70,7 @@ if __name__=='__main__':
     # while 1:
     #     name = input("Type in a subname :").upper()
     #     for candidate in corrector.candidates(name):
-    #         print(f'{candidate} :, {Corrector.NAMES[candidate]}')
+    #         print(f'{candidate} :, {NAMES[candidate]}')
     #     print("Best candidate : ", corrector.correction(name))
 
     words = ["appeal",
