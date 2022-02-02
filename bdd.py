@@ -72,7 +72,7 @@ class DBConnector:
 
         if(query[-1] != ';'): query += ';'
 
-        print(f"> Perform request {query}")
+        # print(f"> Perform request {query}")
         cursor.execute(query)
         #print("Request successful")
         if dml: 

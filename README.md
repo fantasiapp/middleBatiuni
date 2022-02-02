@@ -17,3 +17,5 @@ Dependencies:
     pip install pdf2image
     sudo apt-get install tesseract-ocr -y
     sudo apt-get install -y poppler-utils
+
+    pip3 install opencv-python

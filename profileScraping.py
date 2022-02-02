@@ -65,14 +65,17 @@ def handleSearchEstablishmentsByDenomination(resList: list):
 def getEnterpriseDataFrom(siren = None, siret=None, subName=None):
     if subName:
         corrector = spell.Corrector()
-        query = querySearchEstablishmentsByDenomination(corrector.correction(subName.upper()))
+        subName_corrected = corrector.correction(subName.upper())
+        query = querySearchEstablishmentsByDenomination(subName_corrected)
         handler = handleSearchEstablishmentsByDenomination
     elif siren:
         pass
     elif siret:
         pass
     
+    print("\tQuery for name", subName_corrected)
     resList = sireneConnector.executeRequest(query, dml=True)
+    print("\t", len(resList), "results found.")
     if not resList:
         return None
     return handler(resList)

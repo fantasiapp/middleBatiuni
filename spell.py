@@ -1,7 +1,5 @@
-from dis import dis
 import sys
 
-from cv2 import sort
 sys.path.append('/var/fantasiapp/batiUni/middle/')
 from bdd import DBConnector
 sireneConnector = DBConnector('Sirene')
@@ -16,6 +14,7 @@ class Corrector:
             Corrector.NAMES = Counter(self.Names())
 
     def Names(self):
+        print("\tLoading enterprise names in RAM")
         return [res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
 
     def P(self, name):
