@@ -78,4 +78,4 @@ def getEnterpriseDataFrom(siren = None, siret=None, subName=None):
     print("\t", len(resList), "results found.")
     if not resList:
         return None
-    return handler(resList)
+    return {'data': handler(resList)}
