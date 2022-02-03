@@ -50,7 +50,8 @@ def apiCall(fn):
                     'message': 'Oll Korrekt.'
                     })
                 return res
-        except:
+        except Exception as e:
+            print(e)
             return {fn.__name__: 'error',
                     'message': ' : An unexpecteed error occured.'
                     }
