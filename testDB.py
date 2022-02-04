@@ -2,5 +2,5 @@ from bdd import *
 
 from geocoding import getCoordinatesFrom
 
-address = "50 quai Louis Blériot"
+address = "11 downing street"
 print(getCoordinatesFrom(address))
