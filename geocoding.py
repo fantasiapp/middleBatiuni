@@ -39,5 +39,5 @@ def getCoordinatesFrom(raw: str = ""):
     if not results:
         return None
     return {'address': results[0]['properties']['label'],
-            'latitude': results[0]['geometry']['coordinates'][0],
-            'longitude': results[0]['geometry']['coordinates'][1]}
+            'latitude': results[0]['geometry']['coordinates'][1],
+            'longitude': results[0]['geometry']['coordinates'][0]}
