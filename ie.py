@@ -202,6 +202,11 @@ class KbisExtractor(Extractor):
         pattern = r'(\d\d\d \d\d\d \d\d\d) R.C.S'
         return self.regexSearch(pattern, [('rcsNumber', 1)])
 
+    def getCapital(self):
+        pattern = r'(\d+([\. ]\d\d\d)*(,\d+)?)\s+\D'
+        return self.regexSearch(pattern, [('capital', 1)], header="Capital social")
+
+
     def getEverything(self):
         res = super().getEverything()
         res.update(self.getSecurityCode())
@@ -253,13 +258,11 @@ doc2 = QualibatExtractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\middleBati
 
 # extractor.checkValidity()
 
-'''
+
 extractor = UrssafExtractor('../documents/urssaf/URSSAF 2020.pdf')
 data = extractor.getEverything()
 for field in data:
     print('{:>30} {:<30}'.format(field, str(data[field])))
-'''
-
 
 
 
