@@ -184,7 +184,7 @@ class UrssafExtractor(Extractor):
 class KbisExtractor(Extractor):
     
     def getValidityEnd(self):
-        pattern = r'qu\'au\s.*?(\d\d\/\d\d\/\d\d\d\d)'
+        pattern = r'jour au\s.*?(\d\d\/\d\d\/\d\d\d\d)'
         return self.regexSearch(pattern, [('validityEnd', 1)])
 
     def getSecurityCode(self):
@@ -253,30 +253,12 @@ doc2 = QualibatExtractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\middleBati
 
 # extractor.checkValidity()
 
-def testAllKbis():
-    kbisDir = "../documents/kbis"
-    for file in (os.path.join(kbisDir, file) for file in os.listdir(kbisDir)):
-        print("Testing", file)
-        try:
-            extractor = KbisExtractor(file)
-            print(extractor.getEverything())
-            print(extractor.checkValidity(), end="\n\n")
-        except:
-            print("Unable to read\n\n")
-
-#testAllKbis()
-
 '''
 extractor = UrssafExtractor('../documents/urssaf/URSSAF 2020.pdf')
 data = extractor.getEverything()
 for field in data:
     print('{:>30} {:<30}'.format(field, str(data[field])))
 '''
-
-
-
-
-
 
 
 

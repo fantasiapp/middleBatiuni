@@ -9,15 +9,16 @@ from itertools import chain
 
 def Names():
     print("\tLoading enterprise names in RAM")
-    return Counter([res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)])
+    return [res[0] for res in sireneConnector.executeRequest('SELECT denominationUniteLegale FROM unites_legales WHERE denominationUniteLegale NOT LIKE ""', True)]
 
 NAMES = Names()
+NAMESCOUNTER = Counter(NAMES)
 
 class Corrector:
        
     @classmethod
     def P(cls, name):
-        return NAMES[name]
+        return NAMESCOUNTER[name]
 
     @classmethod
     def correction(cls, name, maxDistance: int=2):
@@ -30,7 +31,7 @@ class Corrector:
 
     @classmethod
     def known(cls, names):
-        return set(name for name in names if name in NAMES)
+        return set(name for name in names if name in NAMESCOUNTER)
 
 def edits1(name):
     characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890 '
@@ -45,6 +46,7 @@ def edits2(name):
     return (e2 for e1 in edits1(name) for e2 in edits1(e1))
 
 def editsRecursive(name, depth):
+    print("editsRecursive for", name, "with depth", depth)
     if depth==0:
         return (name)
     else:
@@ -77,65 +79,3 @@ def sortByDistance(words: list, word: str):
 
     words.sort(key=distanceWithWord)
     return words
-
-if __name__=='__main__':
-    # corrector = Corrector()
-    # while 1:
-    #     name = input("Type in a subname :").upper()
-    #     for candidate in corrector.candidates(name):
-    #         print(f'{candidate} :, {NAMES[candidate]}')
-    #     print("Best candidate : ", corrector.correction(name))
-
-    words = ["appeal",
-            "executive",
-            "snow",
-            "theorist",
-            "sister",
-            "eat",
-            "oral",
-            "single",
-            "pill",
-            "reward",
-            "enfix",
-            "established",
-            "allowance",
-            "struggle",
-            "cultural",
-            "overlook",
-            "sermon",
-            "swarm",
-            "fix",
-            "rotate",
-            "loot",
-            "automatic",
-            "pillow",
-            "roof",
-            "ordinary",
-            "monopoly",
-            "small",
-            "closed",
-            "expression",
-            "restrain",
-            "liberty",
-            "recognize",
-            "concentration",
-            "spell",
-            "blast",
-            "terms",
-            "layout",
-            "common",
-            "thumb",
-            "secular",
-            "building",
-            "attractive",
-            "shape",
-            "courtship",
-            "fee",
-            "elephant",
-            "protection",
-            "stream",
-            "palm",
-            "wrap"]
-
-    for word in sortByDistance(words, 'stream'):
-        print(word, '\t', distance(word, 'stream'))
