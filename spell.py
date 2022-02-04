@@ -5,6 +5,7 @@ from bdd import DBConnector
 sireneConnector = DBConnector('Sirene')
 
 from collections import Counter
+from itertools import chain
 
 def Names():
     print("\tLoading enterprise names in RAM")
@@ -19,12 +20,13 @@ class Corrector:
         return NAMES[name]
 
     @classmethod
-    def correction(cls, name):
-        return max(cls.candidates(name), key=cls.P)
+    def correction(cls, name, maxDistance: int=2):
+        return max(cls.candidates(name, maxDistance), key=cls.P)
 
     @classmethod
-    def candidates(cls, name):
-        return (cls.known([name]) or cls.known(edits1(name)) or cls.known(edits2(name)) or [name])
+    def candidates(cls, name, maxDistance: int=2):
+        if maxDistance==2:
+            return (cls.known([name]) or cls.known(edits1(name)) or cls.known(edits2(name)) or [name])
 
     @classmethod
     def known(cls, names):
@@ -41,6 +43,15 @@ def edits1(name):
 
 def edits2(name):
     return (e2 for e1 in edits1(name) for e2 in edits1(e1))
+
+def editsRecursive(name, depth):
+    if depth==0:
+        return (name)
+    else:
+        ans = ()
+        for closeName in edits1(name):
+            ans = chain(ans, editsRecursive(closeName, depth-1))
+        return ans
 
 def distance(a: str, b: str):
     D = [[0 for j in range(len(b)+1)] for i in range(len(a)+1)]
