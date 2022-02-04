@@ -1,8 +1,6 @@
 from bdd import *
 
-from profileScraping import getEnterpriseDataFrom
-'''
-data = getEnterpriseDataFrom(subName="fantp")["data"]
-for value in data["EstablishmentsValues"].values():
-    print(value)
-'''
+from geocoding import getCoordinatesFrom
+
+address = "50 quai Louis Blériot"
+print(getCoordinatesFrom(address))
