@@ -61,7 +61,7 @@ class Extractor:
         while '  ' in text:
             text = text.replace('  ', ' ')
         self.text = text
-        # print(text)
+        #print(text)
 
     def regexSearch(self, pattern, groups: list[tuple], header: str=""):
         if header:
@@ -183,9 +183,9 @@ class UrssafExtractor(Extractor):
 
 class KbisExtractor(Extractor):
     
-    def getValidityEnd(self):
-        pattern = r'jour au\s.*?(\d\d\/\d\d\/\d\d\d\d)'
-        return self.regexSearch(pattern, [('validityEnd', 1)])
+    def getValidityBegin(self):
+        pattern = r'(\d\d \w+ \d\d\d\d)'
+        return self.regexSearch(pattern, [('validityBegin', 1)], header="jour au")
 
     def getSecurityCode(self):
         '''
@@ -203,16 +203,17 @@ class KbisExtractor(Extractor):
         return self.regexSearch(pattern, [('rcsNumber', 1)])
 
     def getCapital(self):
-        pattern = r'(\d+([\. ]\d\d\d)*(,\d+)?)\s+\D'
+        pattern = r'(\d+( \d\d\d)*,\d\d)\s+\D'
         return self.regexSearch(pattern, [('capital', 1)], header="Capital social")
 
 
     def getEverything(self):
         res = super().getEverything()
+        res.update(self.getValidityBegin())
         res.update(self.getSecurityCode())
         res.update(self.getManagementNumber())
         res.update(self.getRcsNumber())
-
+        res.update(self.getCapital())
         return res
 
     def checkValidity(self):
@@ -259,7 +260,7 @@ doc2 = QualibatExtractor("C:\\Users\\Baptiste\\Documents\\Fantasiapp\\middleBati
 # extractor.checkValidity()
 
 
-extractor = UrssafExtractor('../documents/urssaf/URSSAF 2020.pdf')
+extractor = KbisExtractor('../documents/kbis/k-biss.pdf')
 data = extractor.getEverything()
 for field in data:
     print('{:>30} {:<30}'.format(field, str(data[field])))
