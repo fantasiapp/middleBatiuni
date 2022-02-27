@@ -2,7 +2,7 @@ import sys
 import os
 package_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append('/var/fantasiapp/batiUni/middle/')
-from bdd import DBConnector, executeRequest
+from bdd import DBConnector
 sireneConnector = DBConnector('Sirene')
 
 

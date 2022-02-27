@@ -1,5 +1,6 @@
 from clustering import *
 from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
 
 '''
@@ -94,3 +95,6 @@ def visualizeSVM():
     plt.yticks(())
 
     plt.savefig('./saves/svm.png')
+
+visualizePopulation()
+visualizeSVM()
