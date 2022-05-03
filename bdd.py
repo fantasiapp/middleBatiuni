@@ -30,8 +30,8 @@ class DBConnector:
             def wrapper(self, *args, **kwargs):
                 try:
                     conn = mariadb.connect(
-                        user="baptiste",
-                        password="fantaServer99",
+                        user="Sirene",
+                        password="jsG9hKSzKno8",
                         database=self.database
                     )
                             
